@@ -1,3 +1,7 @@
 <Solution>
   <Project Path="src/VanDerHeijden.Logging/VanDerHeijden.Logging.csproj" />
+  <Project Path="src/VanDerHeijden.Logging.File/VanDerHeijden.Logging.File.csproj" />
+  <Project Path="src/VanDerHeijden.Logging.MongoDb/VanDerHeijden.Logging.MongoDb.csproj" />
+  <Project Path="src/VanDerHeijden.Logging.Sql/VanDerHeijden.Logging.Sql.csproj" />
+  <Project Path="src/VanDerHeijden.Logging.Redis/VanDerHeijden.Logging.Redis.csproj" />
 </Solution>

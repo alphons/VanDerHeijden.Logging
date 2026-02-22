@@ -7,7 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
+    <PackageReference Include="MongoDB.Driver" Version="3.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VanDerHeijden.Logging\VanDerHeijden.Logging.csproj" />
   </ItemGroup>
 
 </Project>
