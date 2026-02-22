@@ -1,4 +1,4 @@
-namespace VanDerHeijden.Logging;
+namespace VanDerHeijden.Logging.Redis;
 
 public class RedisLogEntry
 {

@@ -1,7 +1,7 @@
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace VanDerHeijden.Logging;
+namespace VanDerHeijden.Logging.Redis;
 
 /// <summary>
 /// Writes log entries to a Redis list using RPUSH.

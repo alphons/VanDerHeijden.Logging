@@ -1,6 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using System.Threading.Channels;
 using VanDerHeijden.Logging;
+using VanDerHeijden.Logging.File;
 
 /// <summary>
 /// Meet de end-to-end throughput van BatchedLogger + FileLogWriter:

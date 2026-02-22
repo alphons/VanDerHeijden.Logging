@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Threading.Channels;
 
-namespace VanDerHeijden.Logging;
+namespace VanDerHeijden.Logging.File;
 
 public static class FileLoggingBuilderExtensions
 {

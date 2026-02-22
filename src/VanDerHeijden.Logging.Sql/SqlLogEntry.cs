@@ -1,4 +1,4 @@
-namespace VanDerHeijden.Logging;
+namespace VanDerHeijden.Logging.Sql;
 
 public class SqlLogEntry
 {

@@ -1,6 +1,6 @@
 using Microsoft.Data.SqlClient;
 
-namespace VanDerHeijden.Logging;
+namespace VanDerHeijden.Logging.Sql;
 
 /// <summary>
 /// Writes log entries to a SQL Server table in bulk using SqlBulkCopy.

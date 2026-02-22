@@ -2,7 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 
-namespace VanDerHeijden.Logging;
+namespace VanDerHeijden.Logging.MongoDb;
 
 public class LogEntry
 {

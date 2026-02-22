@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using System.Threading.Channels;
 
-namespace VanDerHeijden.Logging;
+namespace VanDerHeijden.Logging.MongoDb;
 
 public static class MongoDbLoggingBuilderExtensions
 {

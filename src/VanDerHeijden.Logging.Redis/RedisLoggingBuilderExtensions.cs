@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System.Threading.Channels;
 
-namespace VanDerHeijden.Logging;
+namespace VanDerHeijden.Logging.Redis;
 
 public static class RedisLoggingBuilderExtensions
 {

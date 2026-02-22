@@ -1,5 +1,5 @@
 using BenchmarkDotNet.Attributes;
-using VanDerHeijden.Logging;
+using VanDerHeijden.Logging.File;
 
 [Config(typeof(BenchmarkConfig))]
 [MemoryDiagnoser]
@@ -19,8 +19,9 @@ public class FileLogWriterBenchmarks
 
 	// Aantal keer dat de batch per iteratie wordt herhaald zodat de iteratietijd >100ms wordt,
 	// wat BenchmarkDotNet nodig heeft voor betrouwbare metingen.
-	// 100 herhalingen × ~1ms per flush ≈ 100ms per iteratie.
-	private const int Repeat = 100;
+	// 2000 herhalingen × ~60us per flush ≈ 120ms per iteratie (kleinste combinatie: BatchSize=1, 80 bytes).
+	// Voor de grootste combinatie (BatchSize=500, 1024 bytes) wordt dit ~3s — acceptabel bij 3 iteraties.
+	private const int Repeat = 2000;
 
 	[GlobalSetup]
 	public void GlobalSetup()

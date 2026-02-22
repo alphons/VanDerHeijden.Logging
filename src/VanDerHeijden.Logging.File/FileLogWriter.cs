@@ -1,4 +1,4 @@
-namespace VanDerHeijden.Logging;
+namespace VanDerHeijden.Logging.File;
 
 public sealed class FileLogWriter(string logDirectory = "Logs") : IBatchedLogWriter<string>
 {
