@@ -1,16 +1,13 @@
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Columns;
-using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Jobs;
-using BenchmarkDotNet.Reports;
 using VanDerHeijden.Logging;
 
 [Config(typeof(BenchmarkConfig))]
 [MemoryDiagnoser]
-public class FileLogWriterBenchmarks : IAsyncDisposable
+public class FileLogWriterBenchmarks
 {
 	private FileLogWriter writer = null!;
 	private string logDirectory = null!;
+	private List<string> batch = null!;
 
 	// Gevarieerde batch groottes om het gedrag onder verschillende loads te meten
 	[Params(1, 10, 100, 500)]
@@ -20,7 +17,10 @@ public class FileLogWriterBenchmarks : IAsyncDisposable
 	[Params(80, 256, 1024)]
 	public int MessageLength { get; set; }
 
-	private List<string> batch = null!;
+	// Aantal keer dat de batch per iteratie wordt herhaald zodat de iteratietijd >100ms wordt,
+	// wat BenchmarkDotNet nodig heeft voor betrouwbare metingen.
+	// 100 herhalingen × ~1ms per flush ≈ 100ms per iteratie.
+	private const int Repeat = 100;
 
 	[GlobalSetup]
 	public void GlobalSetup()
@@ -40,7 +40,7 @@ public class FileLogWriterBenchmarks : IAsyncDisposable
 	}
 
 	[IterationCleanup]
-	public async Task IterationCleanup() => await writer.DisposeAsync();
+	public void IterationCleanup() => writer.DisposeAsync().AsTask().GetAwaiter().GetResult();
 
 	[GlobalCleanup]
 	public void GlobalCleanup()
@@ -49,13 +49,14 @@ public class FileLogWriterBenchmarks : IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Meet de ruwe WriteBatchAsync doorvoer: hoeveel tijd kost 1 batch flush naar schijf.
+	/// Meet de gemiddelde tijd per WriteBatchAsync-aanroep over <see cref="Repeat"/> herhalingen.
+	/// Eén iteratie schrijft Repeat × BatchSize berichten zodat de iteratietijd >100ms is.
 	/// </summary>
-	[Benchmark(Description = "WriteBatchAsync")]
+	[Benchmark(Description = "WriteBatchAsync", OperationsPerInvoke = Repeat)]
+	[BenchmarkCategory("FileLogWriter")]
 	public async Task WriteBatch()
 	{
-		await writer.WriteBatchAsync(batch, CancellationToken.None);
+		for (var i = 0; i < Repeat; i++)
+			await writer.WriteBatchAsync(batch, CancellationToken.None);
 	}
-
-	public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

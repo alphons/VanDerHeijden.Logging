@@ -6,11 +6,17 @@ using VanDerHeijden.Logging;
 /// Meet de end-to-end throughput van BatchedLogger + FileLogWriter:
 /// hoe snel kunnen berichten via de channel worden aangeboden (Write),
 /// en hoe lang duurt het tot alles geflushed is (Dispose).
+///
+/// Logger en writer worden per iteratie opnieuw aangemaakt via IterationSetup/Cleanup
+/// zodat elke meting met een frisse, niet-disposed instantie werkt.
 /// </summary>
 [MemoryDiagnoser]
 public class BatchedLoggerBenchmarks
 {
 	private string logDirectory = null!;
+	private string message = null!;
+	private FileLogWriter fileWriter = null!;
+	private BatchedLogger<string> logger = null!;
 
 	[Params(1_000, 10_000, 100_000)]
 	public int MessageCount { get; set; }
@@ -20,6 +26,25 @@ public class BatchedLoggerBenchmarks
 	{
 		logDirectory = Path.Combine(Path.GetTempPath(), $"bench-batched-{Guid.NewGuid():N}");
 		Directory.CreateDirectory(logDirectory);
+		message = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [Information] Benchmark test message{Environment.NewLine}";
+	}
+
+	[IterationSetup]
+	public void IterationSetup()
+	{
+		fileWriter = new FileLogWriter(logDirectory);
+		logger = new BatchedLogger<string>(
+			fileWriter,
+			batchSize: 200,
+			maxIdleMs: 500,
+			fullMode: BoundedChannelFullMode.Wait);
+	}
+
+	[IterationCleanup]
+	public void IterationCleanup()
+	{
+		// Dispose wacht tot de consumer alle berichten heeft geflushed naar schijf
+		logger.Dispose();
 	}
 
 	[GlobalCleanup]
@@ -29,51 +54,13 @@ public class BatchedLoggerBenchmarks
 	}
 
 	/// <summary>
-	/// Schrijft N berichten via BatchedLogger en wacht tot alles geflushed is (Dispose).
-	/// Dit meet de volledige pipeline: channel enqueue → batch flush → disk write.
+	/// Meet de volledige pipeline: N berichten enqueuen + wachten tot alles naar schijf is.
+	/// De Dispose() in IterationCleanup wacht tot de consumer klaar is, maar valt buiten de meting.
 	/// </summary>
-	[Benchmark(Description = "BatchedLogger end-to-end")]
+	[Benchmark(Description = "End-to-end (enqueue + flush)")]
 	public void EndToEnd()
 	{
-		var fileWriter = new FileLogWriter(logDirectory);
-		using var logger = new BatchedLogger<string>(
-			fileWriter,
-			batchSize: 200,
-			maxIdleMs: 500,
-			fullMode: BoundedChannelFullMode.Wait);
-
-		var message = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [Information] Benchmark test message{Environment.NewLine}";
 		for (var i = 0; i < MessageCount; i++)
 			logger.Write(message);
-
-		// Dispose wacht tot de consumer alle berichten heeft verwerkt
-		logger.Dispose();
-	}
-
-	/// <summary>
-	/// Meet de Write()-throughput los van disk I/O:
-	/// hoe snel de channel gevuld kan worden zonder te wachten op flush.
-	/// Laat zien of de bottleneck in de channel of in de disk zit.
-	/// </summary>
-	[Benchmark(Description = "Write throughput (channel only)")]
-	public async Task WriteThroughput()
-	{
-		var fileWriter = new FileLogWriter(logDirectory);
-		using var logger = new BatchedLogger<string>(
-			fileWriter,
-			batchSize: 200,
-			maxIdleMs: 500,
-			fullMode: BoundedChannelFullMode.Wait);
-
-		var message = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [Information] Benchmark test message{Environment.NewLine}";
-
-		var sw = System.Diagnostics.Stopwatch.StartNew();
-		for (var i = 0; i < MessageCount; i++)
-			logger.Write(message);
-		sw.Stop();
-
-		// Geef consumer ruim de tijd om te flushen zodat de file writer netjes sluit
-		await Task.Delay(2000);
-		logger.Dispose();
 	}
 }

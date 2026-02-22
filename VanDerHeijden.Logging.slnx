@@ -4,4 +4,5 @@
   <Project Path="src/VanDerHeijden.Logging.MongoDb/VanDerHeijden.Logging.MongoDb.csproj" />
   <Project Path="src/VanDerHeijden.Logging.Sql/VanDerHeijden.Logging.Sql.csproj" />
   <Project Path="src/VanDerHeijden.Logging.Redis/VanDerHeijden.Logging.Redis.csproj" />
+  <Project Path="tests/VanDerHeijden.Logging.File.Benchmarks/VanDerHeijden.Logging.File.Benchmarks.csproj" />
 </Solution>
