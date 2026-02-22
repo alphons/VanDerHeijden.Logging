@@ -18,7 +18,8 @@
       "Bash(powershell -Command:*)",
       "Bash(git -C \"D:/git/VanDerHeijden.Logging\" rm --cached nul)",
       "Bash(printf:*)",
-      "Bash(git -C \"D:/git/VanDerHeijden.Logging\" status)"
+      "Bash(git -C \"D:/git/VanDerHeijden.Logging\" status)",
+      "Bash(dotnet pack:*)"
     ]
   }
 }

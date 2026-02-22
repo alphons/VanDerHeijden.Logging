@@ -4,6 +4,16 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <PackageId>VanDerHeijden.Logging.MongoDb</PackageId>
+    <Version>10.0.0</Version>
+    <Authors>VanDerHeijden</Authors>
+    <Description>MongoDB log writer for VanDerHeijden.Logging: writes batched log entries to a MongoDB collection.</Description>
+    <PackageTags>logging;mongodb;batched</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RepositoryUrl>https://github.com/alphons/VanDerHeijden.Logging</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +24,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\VanDerHeijden.Logging\VanDerHeijden.Logging.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
