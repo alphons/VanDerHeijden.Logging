@@ -37,17 +37,76 @@ Your application
 
 ## Quick start
 
-Install only the writer you need:
+Install only the writer you need and register it in `Program.cs`. Each writer is independent — you can combine multiple writers simultaneously.
+
+### File
 
 ```bash
 dotnet add package VanDerHeijden.Logging.File
 ```
 
-Register in `Program.cs`:
-
 ```csharp
 builder.Logging.AddFileLogger(logDirectory: "Logs");
 ```
+
+Writes daily rotating files to the `Logs` directory as `log-yyyyMMdd.txt`.
+
+### MongoDB
+
+```bash
+dotnet add package VanDerHeijden.Logging.MongoDb
+```
+
+```csharp
+var mongoClient = new MongoClient("mongodb://localhost:27017");
+var collection = mongoClient
+    .GetDatabase("myapp")
+    .GetCollection<LogEntry>("logs");
+
+builder.Logging.AddMongoDbLogger(collection);
+```
+
+### SQL Server
+
+```bash
+dotnet add package VanDerHeijden.Logging.Sql
+```
+
+```csharp
+builder.Logging.AddSqlLogger(
+    connectionString: "Server=.;Database=MyApp;Integrated Security=true;",
+    tableName: "Logs");
+```
+
+Required table schema:
+
+```sql
+CREATE TABLE Logs (
+    Id        BIGINT IDENTITY PRIMARY KEY,
+    Timestamp DATETIME2       NOT NULL,
+    Level     NVARCHAR(20)    NOT NULL,
+    Category  NVARCHAR(256)   NOT NULL,
+    Message   NVARCHAR(MAX)   NOT NULL,
+    Exception NVARCHAR(MAX)   NULL
+);
+```
+
+### Redis
+
+```bash
+dotnet add package VanDerHeijden.Logging.Redis
+```
+
+```csharp
+var redis = await ConnectionMultiplexer.ConnectAsync("localhost:6379");
+
+builder.Logging.AddRedisLogger(
+    database: redis.GetDatabase(),
+    listKey: "logs",
+    ttl: TimeSpan.FromDays(7));   // optional: auto-expire the key
+```
+
+Entries are pushed to a Redis list as JSON via `RPUSH` and can be consumed by any Redis-compatible consumer (Logstash, a worker service, etc.) via `BLPOP`.
 
 ## Configuration
 
