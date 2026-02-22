@@ -1,8 +1,6 @@
-﻿
+﻿namespace VanDerHeijden.Logging;
 
-namespace LoggerExtensions;
-
-public sealed class FileLogWriter(string logDirectory = "Logs") : IBatchedLogWriter<string>, IAsyncDisposable
+public sealed class FileLogWriter(string logDirectory = "Logs") : IBatchedLogWriter<string>
 {
 	private StreamWriter? writer;
 	private DateTime currentDate = DateTime.MinValue;

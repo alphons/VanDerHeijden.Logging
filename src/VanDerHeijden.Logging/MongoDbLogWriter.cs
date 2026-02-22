@@ -4,7 +4,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 
-namespace LoggerExtensions;
+namespace VanDerHeijden.Logging;
 
 public class LogEntry
 {
@@ -18,7 +18,7 @@ public class LogEntry
 	public string? Exception { get; set; }
 }
 
-public sealed class MongoDbLogWriter(IMongoCollection<LogEntry> collection) : IBatchedLogWriter<LogEntry>, IAsyncDisposable
+public sealed class MongoDbLogWriter(IMongoCollection<LogEntry> collection) : IBatchedLogWriter<LogEntry>
 {
 	public async Task WriteBatchAsync(List<LogEntry> entries, CancellationToken ct) =>
 		await collection.InsertManyAsync(entries, cancellationToken: ct);

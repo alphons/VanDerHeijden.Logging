@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Threading.Channels;
 
-namespace LoggerExtensions;
+namespace VanDerHeijden.Logging;
 
 public interface IBatchedLogWriter<T> : IAsyncDisposable
 {
@@ -17,7 +17,11 @@ public sealed class BatchedLogger<T> : IDisposable
 	private readonly int batchSize;
 	private readonly int maxIdleMs;
 
-	public BatchedLogger(IBatchedLogWriter<T> writer, int batchSize = 200, int maxIdleMs = 4000, BoundedChannelFullMode fullMode = BoundedChannelFullMode.Wait)
+	public BatchedLogger(
+		IBatchedLogWriter<T> writer, 
+		int batchSize = 200, 
+		int maxIdleMs = 4000, 
+		BoundedChannelFullMode fullMode = BoundedChannelFullMode.Wait)
 	{
 		this.writer = writer;
 		this.batchSize = batchSize;

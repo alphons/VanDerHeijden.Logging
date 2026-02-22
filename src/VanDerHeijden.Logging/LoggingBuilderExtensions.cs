@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using System.Threading.Channels;
 
-namespace LoggerExtensions;
+namespace VanDerHeijden.Logging;
 
 public static class LoggingBuilderExtensions
 {
