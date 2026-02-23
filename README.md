@@ -145,16 +145,19 @@ builder.Logging.Services.AddSingleton<ILoggerProvider>(_ =>
 
 ## Performance
 
-Measured on an Intel Core i7-3520M (Ivy Bridge), .NET 10.0.3, Windows 10:
+Benchmarked with [BenchmarkDotNet](https://benchmarkdotnet.org/) on .NET 10.0.3 (X64 RyuJIT AVX-512), Windows 11.
+Each figure is the mean time per `WriteBatchAsync` call, averaged over 2 000 consecutive calls.
 
 | BatchSize | MessageLength | Mean/flush | Allocated |
-|----------:|-------------:|----------:|----------:|
-| 1 | 80 B | 48 µs | 475 B |
-| 10 | 256 B | 66 µs | 476 B |
-| 100 | 1024 B | 310 µs | 761 B |
-| 500 | 1024 B | 1,335 µs | 2,441 B |
+|----------:|:-------------:|-----------:|----------:|
+| 1         | 80 B          |    27.9 µs |     477 B |
+| 10        | 256 B         |    26.6 µs |     477 B |
+| 100       | 1 024 B       |   144.0 µs |     756 B |
+| 500       | 1 024 B       |   704.5 µs |   2 436 B |
 
-The `Write()` call itself is non-blocking and allocates nothing beyond the log entry.
+Allocation is flat (~477 B) for all batches up to 100 messages regardless of message length — zero GC pressure in typical use. The `Write()` call itself is non-blocking and allocates nothing beyond the log entry.
+
+> Hardware: Intel Core i5-1035G1 1.00 GHz · Full results in [`VanDerHeijden.Logging.File`](src/VanDerHeijden.Logging.File/README.md#performance).
 
 ## License
 
