@@ -13,12 +13,12 @@ public static class MongoDbLoggingBuilderExtensions
 	/// <summary>
 	/// Adds a MongoDB logger that inserts log entries into the specified collection in batches.
 	/// </summary>
-	/// <param name="builder">The <see cref="ILoggingBuilder"/> to configure.</param>
+	/// <param name="services">The <see cref="IServiceCollection"/> to configure.</param>
 	/// <param name="collection">The MongoDB collection that will receive <see cref="LogEntry"/> documents.</param>
-	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
-	public static ILoggingBuilder AddMongoDbLogger(this ILoggingBuilder builder, IMongoCollection<LogEntry> collection)
+	/// <returns>The <paramref name="services"/> so that additional calls can be chained.</returns>
+	public static IServiceCollection AddMongoDbLogger(this IServiceCollection services, IMongoCollection<LogEntry> collection)
 	{
-		builder.Services.AddSingleton<ILoggerProvider>(_ =>
+		services.AddSingleton<ILoggerProvider>(_ =>
 		{
 			var logWriter = new MongoDbLogWriter(collection);
 			var batchedLogger = new BatchedLogger<LogEntry>(logWriter, batchSize: 100, maxIdleMs: 3000, fullMode: BoundedChannelFullMode.DropOldest);
@@ -33,6 +33,6 @@ public static class MongoDbLoggingBuilderExtensions
 				}
 			);
 		});
-		return builder;
+		return services;
 	}
 }

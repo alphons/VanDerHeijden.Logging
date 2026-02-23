@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging.Redis</PackageId>
-		<Version>10.0.2</Version>
+		<Version>10.0.3</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>Redis log writer for VanDerHeijden.Logging: writes batched log entries to a Redis list using RPUSH.</Description>
 		<PackageTags>logging;redis;batched</PackageTags>
@@ -22,7 +22,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
-		<PackageReference Include="StackExchange.Redis" Version="2.8.24" />
+		<PackageReference Include="StackExchange.Redis" Version="2.11.3" />
 	</ItemGroup>
 
 	<ItemGroup>
