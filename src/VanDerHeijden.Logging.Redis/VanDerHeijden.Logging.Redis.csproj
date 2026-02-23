@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging.Redis</PackageId>
-		<Version>10.0.3</Version>
+		<Version>10.0.4</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>Redis log writer for VanDerHeijden.Logging: writes batched log entries to a Redis list using RPUSH.</Description>
 		<PackageTags>logging;redis;batched</PackageTags>

@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging.Sql</PackageId>
-		<Version>10.0.3</Version>
+		<Version>10.0.4</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>SQL Server log writer for VanDerHeijden.Logging: writes batched log entries to a SQL Server table using SqlBulkCopy.</Description>
 		<PackageTags>logging;sql;sqlserver;batched</PackageTags>

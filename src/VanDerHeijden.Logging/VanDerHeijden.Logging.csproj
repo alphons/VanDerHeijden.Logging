@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging</PackageId>
-		<Version>10.0.3</Version>
+		<Version>10.0.4</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>Core batched logging abstractions for .NET: IBatchedLogWriter&lt;T&gt;, BatchedLogger&lt;T&gt; and BatchedLoggerProvider&lt;T&gt;.</Description>
 		<PackageTags>logging;batched;core</PackageTags>

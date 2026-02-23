@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging.MongoDb</PackageId>
-		<Version>10.0.3</Version>
+		<Version>10.0.4</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>MongoDB log writer for VanDerHeijden.Logging: writes batched log entries to a MongoDB collection.</Description>
 		<PackageTags>logging;mongodb;batched</PackageTags>

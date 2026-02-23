@@ -15,7 +15,7 @@ public static class CustomLoggingExtensions
 	/// <param name="ConsoleLogging">true for SimpleConsole logging</param>
 	/// <param name="DefaultLogLevel">Trace, Debug, Information, Warning, Error, Critical, None</param>
 	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
-	public static ILoggingBuilder AddCustomLogging(this ILoggingBuilder builder, bool ConsoleLogging = true, string DefaultLogLevel = "Information")
+	public static ILoggingBuilder AddCustomLogger(this ILoggingBuilder builder, bool ConsoleLogging = true, string DefaultLogLevel = "Information")
 	{
 		builder.Services.AddLogging(logging =>
 		{
