@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging.Sql</PackageId>
-		<Version>10.0.1</Version>
+		<Version>10.0.2</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>SQL Server log writer for VanDerHeijden.Logging: writes batched log entries to a SQL Server table using SqlBulkCopy.</Description>
 		<PackageTags>logging;sql;sqlserver;batched</PackageTags>
@@ -16,6 +16,7 @@
 		<RepositoryUrl>https://github.com/alphons/VanDerHeijden.Logging.git</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
 
 	<ItemGroup>

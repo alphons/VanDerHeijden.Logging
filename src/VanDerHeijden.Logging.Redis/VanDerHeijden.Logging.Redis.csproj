@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging.Redis</PackageId>
-		<Version>10.0.1</Version>
+		<Version>10.0.2</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>Redis log writer for VanDerHeijden.Logging: writes batched log entries to a Redis list using RPUSH.</Description>
 		<PackageTags>logging;redis;batched</PackageTags>
@@ -16,6 +16,7 @@
 		<RepositoryUrl>https://github.com/alphons/VanDerHeijden.Logging.git</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
 
 	<ItemGroup>

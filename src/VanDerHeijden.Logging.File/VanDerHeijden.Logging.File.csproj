@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging.File</PackageId>
-		<Version>10.0.1</Version>
+		<Version>10.0.2</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>File log writer for VanDerHeijden.Logging: writes batched log entries to daily rotating text files.</Description>
 		<PackageTags>logging;file;batched</PackageTags>
@@ -16,6 +16,7 @@
 		<RepositoryUrl>https://github.com/alphons/VanDerHeijden.Logging.git</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
 
 	<ItemGroup>
