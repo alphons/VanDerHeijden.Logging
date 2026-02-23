@@ -35,9 +35,7 @@ public class FileLogWriterBenchmarks
 	{
 		writer = new FileLogWriter(logDirectory);
 		var message = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [Information] " + new string('x', Math.Max(0, MessageLength - 40));
-		batch = Enumerable.Range(0, BatchSize)
-			.Select(i => $"{message} #{i}{Environment.NewLine}")
-			.ToList();
+		batch = [.. Enumerable.Range(0, BatchSize).Select(i => $"{message} #{i}{Environment.NewLine}")];
 	}
 
 	[IterationCleanup]
