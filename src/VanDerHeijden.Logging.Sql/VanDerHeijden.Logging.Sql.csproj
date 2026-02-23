@@ -1,33 +1,36 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 
-    <PackageId>VanDerHeijden.Logging.Sql</PackageId>
-    <Version>10.0.0</Version>
-    <Authors>VanDerHeijden</Authors>
-    <Description>SQL Server log writer for VanDerHeijden.Logging: writes batched log entries to a SQL Server table using SqlBulkCopy.</Description>
-    <PackageTags>logging;sql;sqlserver;batched</PackageTags>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <RepositoryUrl>https://github.com/alphons/VanDerHeijden.Logging</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-  </PropertyGroup>
+		<PackageId>VanDerHeijden.Logging.Sql</PackageId>
+		<Version>10.0.1</Version>
+		<Authors>VanDerHeijden</Authors>
+		<Description>SQL Server log writer for VanDerHeijden.Logging: writes batched log entries to a SQL Server table using SqlBulkCopy.</Description>
+		<PackageTags>logging;sql;sqlserver;batched</PackageTags>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<PackageProjectUrl>https://github.com/alphons/VanDerHeijden.Logging</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/alphons/VanDerHeijden.Logging.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\VanDerHeijden.Logging\VanDerHeijden.Logging.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\VanDerHeijden.Logging\VanDerHeijden.Logging.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="icon.png" Pack="true" PackagePath="\" />
+	</ItemGroup>
 
 </Project>
