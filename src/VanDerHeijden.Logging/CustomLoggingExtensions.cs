@@ -9,15 +9,15 @@ namespace VanDerHeijden.Logging;
 public static class CustomLoggingExtensions
 {
 	/// <summary>
-	/// 
+	/// AddCustomLogging for SimpleConsole and setting DefaultLogLevel via <see cref="ILoggingBuilder" />
 	/// </summary>
-	/// <param name="services"></param>
-	/// <param name="ConsoleLogging"></param>
+	///  <param name="builder">The <see cref="ILoggingBuilder"/> to configure.</param>
+	/// <param name="ConsoleLogging">true for SimpleConsole logging</param>
 	/// <param name="DefaultLogLevel">Trace, Debug, Information, Warning, Error, Critical, None</param>
-	/// <returns>The <paramref name="services"/> so that additional calls can be chained.</returns>
-	public static IServiceCollection AddCustomLogging(this IServiceCollection services, bool ConsoleLogging = true, string DefaultLogLevel = "Information")
+	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
+	public static ILoggingBuilder AddCustomLogging(this ILoggingBuilder builder, bool ConsoleLogging = true, string DefaultLogLevel = "Information")
 	{
-		services.AddLogging(logging =>
+		builder.Services.AddLogging(logging =>
 		{
 			logging.ClearProviders();
 			logging.AddFilter("Microsoft.AspNetCore.Watch", LogLevel.None);
@@ -33,6 +33,6 @@ public static class CustomLoggingExtensions
 			LogLevel minimumLevel = Enum.TryParse<LogLevel>(DefaultLogLevel, true, out LogLevel parsedLevel) ? parsedLevel : LogLevel.Information;
 			logging.SetMinimumLevel(minimumLevel);
 		});
-		return services;
+		return builder;
 	}
 }

@@ -13,16 +13,16 @@ public static class FileLoggingBuilderExtensions
 	/// Adds a file logger that writes log messages to daily rotating text files inside
 	/// <paramref name="logDirectory"/>.
 	/// </summary>
-	/// <param name="services">The <see cref="IServiceCollection"/> to configure.</param>
+	/// <param name="builder">The <see cref="ILoggingBuilder"/> to configure.</param>
 	/// <param name="logDirectory">
 	/// Path to the directory where log files are written.
 	/// The directory is created automatically if it does not exist.
 	/// Defaults to <c>"Logs"</c>.
 	/// </param>
-	/// <returns>The <paramref name="services"/> so that additional calls can be chained.</returns>
-	public static IServiceCollection AddFileLogger(this IServiceCollection services, string logDirectory = "Logs")
+	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
+	public static ILoggingBuilder AddFileLogger(this ILoggingBuilder builder, string logDirectory = "Logs")
 	{
-		services.AddSingleton<ILoggerProvider>(_ =>
+		builder.Services.AddSingleton<ILoggerProvider>(_ =>
 		{
 			var logWriter = new FileLogWriter(logDirectory);
 			var batchedLogger = new BatchedLogger<string>(logWriter, fullMode: BoundedChannelFullMode.Wait);
@@ -32,6 +32,6 @@ public static class FileLoggingBuilderExtensions
 					$"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}"
 			);
 		});
-		return services;
+		return builder;
 	}
 }

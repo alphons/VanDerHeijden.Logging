@@ -12,19 +12,19 @@ public static class SqlLoggingBuilderExtensions
 	/// <summary>
 	/// Adds a SQL Server logger that bulk-inserts log entries into the specified table using <c>SqlBulkCopy</c>.
 	/// </summary>
-	/// <param name="services">The <see cref="IServiceCollection"/> to configure.</param>
+	/// <param name="builder">The <see cref="ILoggingBuilder"/> to configure.</param>
 	/// <param name="connectionString">The SQL Server connection string.</param>
 	/// <param name="tableName">
 	/// The destination table name. Defaults to <c>"Logs"</c>.
 	/// See <see cref="SqlLogWriter"/> for the expected schema.
 	/// </param>
-	/// <returns>The <paramref name="services"/> so that additional calls can be chained.</returns>
-	public static IServiceCollection AddSqlLogger(
-		this IServiceCollection services,
+	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
+	public static ILoggingBuilder AddSqlLogger(
+		this ILoggingBuilder builder,
 		string connectionString,
 		string tableName = "Logs")
 	{
-		services.AddSingleton<ILoggerProvider>(_ =>
+		builder.Services.AddSingleton<ILoggerProvider>(_ =>
 		{
 			var logWriter = new SqlLogWriter(connectionString, tableName);
 			var batchedLogger = new BatchedLogger<SqlLogEntry>(logWriter, batchSize: 200, maxIdleMs: 4000, fullMode: BoundedChannelFullMode.Wait);
@@ -39,6 +39,6 @@ public static class SqlLoggingBuilderExtensions
 				}
 			);
 		});
-		return services;
+		return builder;
 	}
 }
