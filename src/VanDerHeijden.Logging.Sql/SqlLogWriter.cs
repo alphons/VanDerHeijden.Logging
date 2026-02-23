@@ -16,6 +16,11 @@ namespace VanDerHeijden.Logging.Sql;
 /// </summary>
 public sealed class SqlLogWriter(string connectionString, string tableName = "Logs") : IBatchedLogWriter<SqlLogEntry>
 {
+	/// <summary>
+	/// Bulk-inserts all entries into the configured SQL Server table using <see cref="SqlBulkCopy"/>.
+	/// </summary>
+	/// <param name="entries">The log entries to insert.</param>
+	/// <param name="ct">A token that can cancel the operation.</param>
 	public async Task WriteBatchAsync(List<SqlLogEntry> entries, CancellationToken ct)
 	{
 		await using var connection = new SqlConnection(connectionString);
@@ -37,6 +42,7 @@ public sealed class SqlLogWriter(string connectionString, string tableName = "Lo
 		await bulkCopy.WriteToServerAsync(table, ct);
 	}
 
+	/// <inheritdoc/>
 	public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
 	private static System.Data.DataTable ToDataTable(List<SqlLogEntry> entries)

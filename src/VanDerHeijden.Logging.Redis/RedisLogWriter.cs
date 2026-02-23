@@ -19,6 +19,12 @@ public sealed class RedisLogWriter(
 		PropertyNamingPolicy = JsonNamingPolicy.CamelCase
 	};
 
+	/// <summary>
+	/// Serializes all entries as JSON and appends them to the Redis list in a single <c>RPUSH</c> command.
+	/// If a TTL is configured, <c>EXPIREAT</c> is applied to the key after each write.
+	/// </summary>
+	/// <param name="entries">The log entries to push.</param>
+	/// <param name="ct">A token that can cancel the operation.</param>
 	public async Task WriteBatchAsync(List<RedisLogEntry> entries, CancellationToken ct)
 	{
 		var values = entries
@@ -31,5 +37,6 @@ public sealed class RedisLogWriter(
 			await database.KeyExpireAsync(listKey, ttl.Value);
 	}
 
+	/// <inheritdoc/>
 	public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

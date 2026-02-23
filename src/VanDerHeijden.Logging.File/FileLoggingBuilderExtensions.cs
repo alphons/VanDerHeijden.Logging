@@ -4,8 +4,22 @@ using System.Threading.Channels;
 
 namespace VanDerHeijden.Logging.File;
 
+/// <summary>
+/// Extension methods for registering file-based logging via <see cref="ILoggingBuilder"/>.
+/// </summary>
 public static class FileLoggingBuilderExtensions
 {
+	/// <summary>
+	/// Adds a file logger that writes log messages to daily rotating text files inside
+	/// <paramref name="logDirectory"/>.
+	/// </summary>
+	/// <param name="builder">The <see cref="ILoggingBuilder"/> to configure.</param>
+	/// <param name="logDirectory">
+	/// Path to the directory where log files are written.
+	/// The directory is created automatically if it does not exist.
+	/// Defaults to <c>"Logs"</c>.
+	/// </param>
+	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
 	public static ILoggingBuilder AddFileLogger(this ILoggingBuilder builder, string logDirectory = "Logs")
 	{
 		builder.Services.AddSingleton<ILoggerProvider>(_ =>
