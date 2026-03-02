@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging</PackageId>
-		<Version>10.0.4</Version>
+		<Version>10.0.5</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>Core batched logging abstractions for .NET: IBatchedLogWriter&lt;T&gt;, BatchedLogger&lt;T&gt; and BatchedLoggerProvider&lt;T&gt;.</Description>
 		<PackageTags>logging;batched;core</PackageTags>
@@ -24,6 +24,11 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.3" />
+
+		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Net.Http.Headers" Version="10.0.3" />
+
 	</ItemGroup>
 
 	<ItemGroup>
