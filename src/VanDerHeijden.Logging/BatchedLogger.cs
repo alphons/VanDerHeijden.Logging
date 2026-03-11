@@ -220,7 +220,7 @@ internal sealed class BatchedCategoryLogger<T>(
 			ctx.Request.Method,
 			ip ?? "Unknown",
 			ctx.Request.Headers["Referer"].ToString(),
-			ctx.Request.Headers["UserAgent"].ToString(),
+			ctx.Request.Headers["User-Agent"].ToString(),
 			sessionId ?? string.Empty
 		);
 	}
