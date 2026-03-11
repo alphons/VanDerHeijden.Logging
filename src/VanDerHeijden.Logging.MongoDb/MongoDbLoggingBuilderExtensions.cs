@@ -17,12 +17,25 @@ public static class MongoDbLoggingBuilderExtensions
 	/// <param name="builder">The <see cref="ILoggingBuilder"/> to configure.</param>
 	/// <param name="collection">The MongoDB collection that will receive <see cref="LogEntry"/> documents.</param>
 	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
-	public static ILoggingBuilder AddMongoDbLogger(this ILoggingBuilder builder, IMongoCollection<LogEntry> collection)
+	public static ILoggingBuilder AddMongoDbLogger(this ILoggingBuilder builder, IMongoCollection<LogEntry> collection) =>
+		builder.AddMongoDbLogger(_ => collection);
+
+	/// <summary>
+	/// Adds a MongoDB logger that resolves the collection from the DI container at startup.
+	/// Use this overload when <see cref="IMongoCollection{TDocument}"/> is already registered as a service.
+	/// </summary>
+	/// <param name="builder">The <see cref="ILoggingBuilder"/> to configure.</param>
+	/// <param name="collectionFactory">
+	/// A factory that receives the <see cref="IServiceProvider"/> and returns the
+	/// <see cref="IMongoCollection{TDocument}"/> to write log entries to.
+	/// </param>
+	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
+	public static ILoggingBuilder AddMongoDbLogger(this ILoggingBuilder builder, Func<IServiceProvider, IMongoCollection<LogEntry>> collectionFactory)
 	{
 		builder.Services.AddSingleton<ILoggerProvider>(sp =>
 		{
 			var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
-			var logWriter = new MongoDbLogWriter(collection);
+			var logWriter = new MongoDbLogWriter(collectionFactory(sp));
 			var batchedLogger = new BatchedLogger<LogEntry>(logWriter, batchSize: 100, maxIdleMs: 3000, fullMode: BoundedChannelFullMode.DropOldest);
 			return new BatchedLoggerProvider<LogEntry>(
 				batchedLogger,
