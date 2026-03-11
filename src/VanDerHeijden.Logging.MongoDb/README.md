@@ -26,14 +26,27 @@ builder.Logging.AddMongoDbLogger(collection);
 ```csharp
 public class LogEntry
 {
-    public string Id        { get; set; }  // ObjectId
+    public string Id          { get; set; }  // ObjectId
     public DateTime Timestamp { get; set; }
-    public string Level     { get; set; }
-    public string Category  { get; set; }
-    public string Message   { get; set; }
-    public string? Exception { get; set; }
+    public string Level       { get; set; }
+    public string Category    { get; set; }
+    public string Message     { get; set; }
+    public string? Exception  { get; set; }
+    public string? Path       { get; set; }
+    public string? Method     { get; set; }
+    public string? ClientIp   { get; set; }
+    public string? Referer    { get; set; }
+    public string? UserAgent  { get; set; }
 }
 ```
+
+The HTTP fields are populated automatically when `IHttpContextAccessor` is registered:
+
+```csharp
+builder.Services.AddHttpContextAccessor();
+```
+
+Outside an HTTP context they are `null` and not stored in the document.
 
 ## Repository
 

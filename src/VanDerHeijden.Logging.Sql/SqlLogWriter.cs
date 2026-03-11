@@ -11,7 +11,12 @@ namespace VanDerHeijden.Logging.Sql;
 ///     Level     NVARCHAR(20)    NOT NULL,
 ///     Category  NVARCHAR(256)   NOT NULL,
 ///     Message   NVARCHAR(MAX)   NOT NULL,
-///     Exception NVARCHAR(MAX)   NULL
+///     Exception NVARCHAR(MAX)   NULL,
+///     Path      NVARCHAR(1024)  NULL,
+///     Method    NVARCHAR(10)    NULL,
+///     ClientIp  NVARCHAR(45)    NULL,
+///     Referer   NVARCHAR(2048)  NULL,
+///     UserAgent NVARCHAR(512)   NULL
 ///   );
 /// </summary>
 public sealed class SqlLogWriter(string connectionString, string tableName = "Logs") : IBatchedLogWriter<SqlLogEntry>
@@ -37,6 +42,11 @@ public sealed class SqlLogWriter(string connectionString, string tableName = "Lo
 		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.Category),  "Category");
 		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.Message),   "Message");
 		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.Exception), "Exception");
+		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.Path),      "Path");
+		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.Method),    "Method");
+		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.ClientIp),  "ClientIp");
+		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.Referer),   "Referer");
+		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.UserAgent), "UserAgent");
 
 		var table = ToDataTable(entries);
 		await bulkCopy.WriteToServerAsync(table, ct);
@@ -53,9 +63,21 @@ public sealed class SqlLogWriter(string connectionString, string tableName = "Lo
 		table.Columns.Add("Category",  typeof(string));
 		table.Columns.Add("Message",   typeof(string));
 		table.Columns.Add("Exception", typeof(string));
+		table.Columns.Add("Path",      typeof(string));
+		table.Columns.Add("Method",    typeof(string));
+		table.Columns.Add("ClientIp",  typeof(string));
+		table.Columns.Add("Referer",   typeof(string));
+		table.Columns.Add("UserAgent", typeof(string));
 
 		foreach (var e in entries)
-			table.Rows.Add(e.Timestamp, e.Level, e.Category, e.Message, (object?)e.Exception ?? DBNull.Value);
+			table.Rows.Add(
+				e.Timestamp, e.Level, e.Category, e.Message,
+				(object?)e.Exception ?? DBNull.Value,
+				(object?)e.Path      ?? DBNull.Value,
+				(object?)e.Method    ?? DBNull.Value,
+				(object?)e.ClientIp  ?? DBNull.Value,
+				(object?)e.Referer   ?? DBNull.Value,
+				(object?)e.UserAgent ?? DBNull.Value);
 
 		return table;
 	}

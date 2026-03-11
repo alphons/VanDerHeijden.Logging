@@ -30,9 +30,22 @@ builder.Logging.AddRedisLogger(
   "level": "Information",
   "category": "MyApp.Service",
   "message": "MyApp.Service: User logged in",
-  "exception": null
+  "exception": null,
+  "path": "/api/users/login",
+  "method": "POST",
+  "clientIp": "203.0.113.42",
+  "referer": "https://example.com/login",
+  "userAgent": "Mozilla/5.0 ..."
 }
 ```
+
+The HTTP fields are populated automatically when `IHttpContextAccessor` is registered:
+
+```csharp
+builder.Services.AddHttpContextAccessor();
+```
+
+Outside an HTTP context they are `null` and omitted from the JSON output.
 
 ## Notes
 

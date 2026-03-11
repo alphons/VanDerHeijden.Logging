@@ -27,8 +27,33 @@ CREATE TABLE Logs (
     Level     NVARCHAR(20)    NOT NULL,
     Category  NVARCHAR(256)   NOT NULL,
     Message   NVARCHAR(MAX)   NOT NULL,
-    Exception NVARCHAR(MAX)   NULL
+    Exception NVARCHAR(MAX)   NULL,
+    Path      NVARCHAR(1024)  NULL,
+    Method    NVARCHAR(10)    NULL,
+    ClientIp  NVARCHAR(45)    NULL,
+    Referer   NVARCHAR(2048)  NULL,
+    UserAgent NVARCHAR(512)   NULL
 );
+```
+
+The HTTP columns (`Path`, `Method`, `ClientIp`, `Referer`, `UserAgent`) are populated automatically when
+`IHttpContextAccessor` is registered in the DI container:
+
+```csharp
+builder.Services.AddHttpContextAccessor();
+```
+
+Outside an HTTP context (background services, console apps) these columns are `NULL`.
+
+### Migrating an existing table
+
+```sql
+ALTER TABLE Logs
+    ADD Path      NVARCHAR(1024) NULL,
+        Method    NVARCHAR(10)   NULL,
+        ClientIp  NVARCHAR(45)   NULL,
+        Referer   NVARCHAR(2048) NULL,
+        UserAgent NVARCHAR(512)  NULL;
 ```
 
 ## Repository

@@ -29,8 +29,20 @@ Log files are written to the `Logs` directory (relative to the working directory
 
 ## Log format
 
+Without HTTP context:
 ```
-2026-02-22 14:03:12.456 [Information] MyApp.Service: User logged in
+2026-02-22 14:03:12.456 MyApp.Service: User logged in
+```
+
+With HTTP context (when `IHttpContextAccessor` is registered):
+```
+2026-02-22 14:03:12.456 [POST /api/users/login 203.0.113.42] MyApp.Service: User logged in
+```
+
+Register `IHttpContextAccessor` in `Program.cs` to enable HTTP enrichment:
+
+```csharp
+builder.Services.AddHttpContextAccessor();
 ```
 
 ## Performance

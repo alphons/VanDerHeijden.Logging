@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging.Sql</PackageId>
-		<Version>10.0.4</Version>
+		<Version>10.0.6</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>SQL Server log writer for VanDerHeijden.Logging: writes batched log entries to a SQL Server table using SqlBulkCopy.</Description>
 		<PackageTags>logging;sql;sqlserver;batched</PackageTags>
@@ -21,8 +21,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.4" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.4" />
 	</ItemGroup>
 
 	<ItemGroup>

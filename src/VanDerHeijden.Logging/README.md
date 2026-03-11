@@ -34,13 +34,21 @@ public sealed class MyWriter : IBatchedLogWriter<string>
 Register it:
 
 ```csharp
-builder.Logging.Services.AddSingleton<ILoggerProvider>(_ =>
+builder.Logging.Services.AddSingleton<ILoggerProvider>(sp =>
 {
+    var httpContextAccessor = sp.GetService<IHttpContextAccessor>(); // optional
     var writer = new MyWriter();
     var logger = new BatchedLogger<string>(writer, batchSize: 200, maxIdleMs: 4000);
-    return new BatchedLoggerProvider<string>(logger, entryFactory: (msg, level) => msg);
+    return new BatchedLoggerProvider<string>(
+        logger,
+        entryFactory: (msg, level, ctx) => msg,
+        httpContextAccessor);
 });
 ```
+
+The `entryFactory` receives an optional `HttpLogContext` with request metadata (`Path`, `Method`, `ClientIp`,
+`Referer`, `UserAgent`, `SessionId`). It is `null` when no HTTP context is active or when
+`IHttpContextAccessor` is not registered.
 
 ## Repository
 

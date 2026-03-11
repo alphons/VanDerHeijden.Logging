@@ -87,7 +87,12 @@ CREATE TABLE Logs (
     Level     NVARCHAR(20)    NOT NULL,
     Category  NVARCHAR(256)   NOT NULL,
     Message   NVARCHAR(MAX)   NOT NULL,
-    Exception NVARCHAR(MAX)   NULL
+    Exception NVARCHAR(MAX)   NULL,
+    Path      NVARCHAR(1024)  NULL,
+    Method    NVARCHAR(10)    NULL,
+    ClientIp  NVARCHAR(45)    NULL,
+    Referer   NVARCHAR(2048)  NULL,
+    UserAgent NVARCHAR(512)   NULL
 );
 ```
 
@@ -107,6 +112,26 @@ builder.Logging.AddRedisLogger(
 ```
 
 Entries are pushed to a Redis list as JSON via `RPUSH` and can be consumed by any Redis-compatible consumer (Logstash, a worker service, etc.) via `BLPOP`.
+
+## HTTP context enrichment
+
+All writers automatically capture request metadata when `IHttpContextAccessor` is available:
+
+```csharp
+builder.Services.AddHttpContextAccessor(); // enable once in Program.cs
+```
+
+The following fields are added to each log entry when an HTTP request is active:
+
+| Field | Example |
+|---|---|
+| `Path` | `/api/users/login` |
+| `Method` | `POST` |
+| `ClientIp` | `203.0.113.42` (respects `X-Forwarded-For`) |
+| `Referer` | `https://example.com` |
+| `UserAgent` | `Mozilla/5.0 ...` |
+
+Outside an HTTP context (background services, hosted workers) all HTTP fields are `null` / omitted.
 
 ## Configuration
 
@@ -135,11 +160,15 @@ public sealed class MyWriter : IBatchedLogWriter<string>
 ```
 
 ```csharp
-builder.Logging.Services.AddSingleton<ILoggerProvider>(_ =>
+builder.Logging.Services.AddSingleton<ILoggerProvider>(sp =>
 {
+    var httpContextAccessor = sp.GetService<IHttpContextAccessor>(); // optional
     var writer = new MyWriter();
     var logger = new BatchedLogger<string>(writer);
-    return new BatchedLoggerProvider<string>(logger, (msg, level) => msg);
+    return new BatchedLoggerProvider<string>(
+        logger,
+        entryFactory: (msg, level, ctx) => msg,
+        httpContextAccessor);
 });
 ```
 

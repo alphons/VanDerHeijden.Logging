@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Threading.Channels;
@@ -22,14 +23,19 @@ public static class FileLoggingBuilderExtensions
 	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
 	public static ILoggingBuilder AddFileLogger(this ILoggingBuilder builder, string logDirectory = "Logs")
 	{
-		builder.Services.AddSingleton<ILoggerProvider>(_ =>
+		builder.Services.AddSingleton<ILoggerProvider>(sp =>
 		{
+			var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
 			var logWriter = new FileLogWriter(logDirectory);
 			var batchedLogger = new BatchedLogger<string>(logWriter, fullMode: BoundedChannelFullMode.Wait);
 			return new BatchedLoggerProvider<string>(
 				batchedLogger,
-				entryFactory: (message, _) =>
-					$"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}"
+				entryFactory: (message, _, ctx) =>
+				{
+					var http = ctx is null ? "" : $" [{ctx.Method} {ctx.Path} {ctx.ClientIp}]";
+					return $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}{http} {message}{Environment.NewLine}";
+				},
+				httpContextAccessor
 			);
 		});
 		return builder;

@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>VanDerHeijden.Logging.File</PackageId>
-		<Version>10.0.4</Version>
+		<Version>10.0.6</Version>
 		<Authors>VanDerHeijden</Authors>
 		<Description>File log writer for VanDerHeijden.Logging: writes batched log entries to daily rotating text files.</Description>
 		<PackageTags>logging;file;batched</PackageTags>
@@ -20,8 +20,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.4" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.4" />
 	</ItemGroup>
 
 	<ItemGroup>

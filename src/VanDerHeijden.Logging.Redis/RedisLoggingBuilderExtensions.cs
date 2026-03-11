@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
@@ -27,19 +28,26 @@ public static class RedisLoggingBuilderExtensions
 		string listKey = "logs",
 		TimeSpan? ttl = null)
 	{
-		builder.Services.AddSingleton<ILoggerProvider>(_ =>
+		builder.Services.AddSingleton<ILoggerProvider>(sp =>
 		{
+			var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
 			var logWriter = new RedisLogWriter(database, listKey, ttl);
 			var batchedLogger = new BatchedLogger<RedisLogEntry>(logWriter, batchSize: 200, maxIdleMs: 2000, fullMode: BoundedChannelFullMode.DropOldest);
 			return new BatchedLoggerProvider<RedisLogEntry>(
 				batchedLogger,
-				entryFactory: (message, logLevel) => new RedisLogEntry
+				entryFactory: (message, logLevel, ctx) => new RedisLogEntry
 				{
 					Timestamp = DateTime.UtcNow,
 					Level     = logLevel.ToString(),
 					Category  = message.Split(':')[0],
-					Message   = message
-				}
+					Message   = message,
+					Path      = ctx?.Path,
+					Method    = ctx?.Method,
+					ClientIp  = ctx?.ClientIp,
+					Referer   = ctx?.Referer,
+					UserAgent = ctx?.UserAgent
+				},
+				httpContextAccessor
 			);
 		});
 		return builder;

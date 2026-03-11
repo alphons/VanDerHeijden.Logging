@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Threading.Channels;
@@ -24,19 +25,26 @@ public static class SqlLoggingBuilderExtensions
 		string connectionString,
 		string tableName = "Logs")
 	{
-		builder.Services.AddSingleton<ILoggerProvider>(_ =>
+		builder.Services.AddSingleton<ILoggerProvider>(sp =>
 		{
+			var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
 			var logWriter = new SqlLogWriter(connectionString, tableName);
 			var batchedLogger = new BatchedLogger<SqlLogEntry>(logWriter, batchSize: 200, maxIdleMs: 4000, fullMode: BoundedChannelFullMode.Wait);
 			return new BatchedLoggerProvider<SqlLogEntry>(
 				batchedLogger,
-				entryFactory: (message, logLevel) => new SqlLogEntry
+				entryFactory: (message, logLevel, ctx) => new SqlLogEntry
 				{
 					Timestamp = DateTime.UtcNow,
 					Level     = logLevel.ToString(),
 					Category  = message.Split(':')[0],
-					Message   = message
-				}
+					Message   = message,
+					Path      = ctx?.Path,
+					Method    = ctx?.Method,
+					ClientIp  = ctx?.ClientIp,
+					Referer   = ctx?.Referer,
+					UserAgent = ctx?.UserAgent
+				},
+				httpContextAccessor
 			);
 		});
 		return builder;

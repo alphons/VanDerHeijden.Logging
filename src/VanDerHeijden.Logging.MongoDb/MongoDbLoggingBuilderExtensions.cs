@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -18,19 +19,26 @@ public static class MongoDbLoggingBuilderExtensions
 	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
 	public static ILoggingBuilder AddMongoDbLogger(this ILoggingBuilder builder, IMongoCollection<LogEntry> collection)
 	{
-		builder.Services.AddSingleton<ILoggerProvider>(_ =>
+		builder.Services.AddSingleton<ILoggerProvider>(sp =>
 		{
+			var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
 			var logWriter = new MongoDbLogWriter(collection);
 			var batchedLogger = new BatchedLogger<LogEntry>(logWriter, batchSize: 100, maxIdleMs: 3000, fullMode: BoundedChannelFullMode.DropOldest);
 			return new BatchedLoggerProvider<LogEntry>(
 				batchedLogger,
-				entryFactory: (message, logLevel) => new LogEntry
+				entryFactory: (message, logLevel, ctx) => new LogEntry
 				{
 					Timestamp = DateTime.UtcNow,
-					Level = logLevel.ToString(),
-					Category = message.Split(':')[0],
-					Message = message
-				}
+					Level     = logLevel.ToString(),
+					Category  = message.Split(':')[0],
+					Message   = message,
+					Path      = ctx?.Path,
+					Method    = ctx?.Method,
+					ClientIp  = ctx?.ClientIp,
+					Referer   = ctx?.Referer,
+					UserAgent = ctx?.UserAgent
+				},
+				httpContextAccessor
 			);
 		});
 		return builder;
