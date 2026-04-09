@@ -32,11 +32,11 @@ public static class SqlLoggingBuilderExtensions
 			var batchedLogger = new BatchedLogger<SqlLogEntry>(logWriter, batchSize: 200, maxIdleMs: 4000, fullMode: BoundedChannelFullMode.Wait);
 			return new BatchedLoggerProvider<SqlLogEntry>(
 				batchedLogger,
-				entryFactory: (message, logLevel, ctx, exception) => new SqlLogEntry
+				entryFactory: (category, message, logLevel, exception, ctx) => new SqlLogEntry
 				{
 					Timestamp = DateTime.UtcNow,
 					Level     = logLevel.ToString(),
-					Category  = message.Split(':')[0],
+					Category  = category,
 					Message   = message,
 					Exception = exception?.ToString(),
 					Path      = ctx?.Path,

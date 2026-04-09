@@ -39,11 +39,11 @@ public static class MongoDbLoggingBuilderExtensions
 			var batchedLogger = new BatchedLogger<LogEntry>(logWriter, batchSize: 100, maxIdleMs: 3000, fullMode: BoundedChannelFullMode.DropOldest);
 			return new BatchedLoggerProvider<LogEntry>(
 				batchedLogger,
-				entryFactory: (message, logLevel, ctx, exception) => new LogEntry
+				entryFactory: (category, message, logLevel, exception, ctx) => new LogEntry
 				{
 					Timestamp = DateTime.UtcNow,
 					Level     = logLevel.ToString(),
-					Category  = message.Split(':')[0],
+					Category  = category,
 					Message   = message,
 					Exception = exception?.ToString(),
 					Path      = ctx?.Path,

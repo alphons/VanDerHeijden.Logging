@@ -35,11 +35,11 @@ public static class RedisLoggingBuilderExtensions
 			var batchedLogger = new BatchedLogger<RedisLogEntry>(logWriter, batchSize: 200, maxIdleMs: 2000, fullMode: BoundedChannelFullMode.DropOldest);
 			return new BatchedLoggerProvider<RedisLogEntry>(
 				batchedLogger,
-				entryFactory: (message, logLevel, ctx, exception) => new RedisLogEntry
+				entryFactory: (category, message, logLevel, exception, ctx) => new RedisLogEntry
 				{
 					Timestamp = DateTime.UtcNow,
 					Level     = logLevel.ToString(),
-					Category  = message.Split(':')[0],
+					Category  = category,
 					Message   = message,
 					Exception = exception?.ToString(),
 					Path      = ctx?.Path,
