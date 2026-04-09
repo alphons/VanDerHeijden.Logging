@@ -1,8 +1,9 @@
 <Solution>
-  <Project Path="src/VanDerHeijden.Logging/VanDerHeijden.Logging.csproj" />
   <Project Path="src/VanDerHeijden.Logging.File/VanDerHeijden.Logging.File.csproj" />
   <Project Path="src/VanDerHeijden.Logging.MongoDb/VanDerHeijden.Logging.MongoDb.csproj" />
   <Project Path="src/VanDerHeijden.Logging.Redis/VanDerHeijden.Logging.Redis.csproj" />
   <Project Path="src/VanDerHeijden.Logging.Sql/VanDerHeijden.Logging.Sql.csproj" />
+  <Project Path="src/VanDerHeijden.Logging/VanDerHeijden.Logging.csproj" />
   <Project Path="tests/VanDerHeijden.Logging.File.Benchmarks/VanDerHeijden.Logging.File.Benchmarks.csproj" />
+  <Project Path="tests/VanDerHeijden.Logging.Web/VanDerHeijden.Logging.Web.csproj" Id="ae1da180-d2c0-49e4-a792-43479aea21de" />
 </Solution>
