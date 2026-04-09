@@ -1,8 +1,10 @@
-﻿using MongoDB.Driver;
-using VanDerHeijden.Logging.MongoDb;
-using VanDerHeijden.Logging.Web.Extensions;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 
-namespace VanDerHeijden.Logging.Web.Extensions;
+
+namespace VanDerHeijden.Logging.MongoDb;
 
 public static class MongoDbLoggingExtensions
 {
