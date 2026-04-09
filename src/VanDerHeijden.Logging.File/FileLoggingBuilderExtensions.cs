@@ -30,10 +30,11 @@ public static class FileLoggingBuilderExtensions
 			var batchedLogger = new BatchedLogger<string>(logWriter, fullMode: BoundedChannelFullMode.Wait);
 			return new BatchedLoggerProvider<string>(
 				batchedLogger,
-				entryFactory: (message, _, ctx) =>
+				entryFactory: (message, _, ctx, exception) =>
 				{
 					var http = ctx is null ? "" : $" [{ctx.Method} {ctx.Path} {ctx.ClientIp}]";
-					return $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}{http} {message}{Environment.NewLine}";
+					var ex = exception is null ? "" : $"{Environment.NewLine}{exception}";
+					return $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}{http} {message}{ex}{Environment.NewLine}";
 				},
 				httpContextAccessor
 			);

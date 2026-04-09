@@ -161,8 +161,8 @@ public sealed class BatchedLogger<T> : IDisposable
 /// <typeparam name="T">The type of log entry produced by <paramref name="entryFactory"/>.</typeparam>
 /// <param name="batchedLogger">The shared batched logger used by all created loggers.</param>
 /// <param name="entryFactory">
-/// A factory that converts a formatted message, <see cref="LogLevel"/>, and optional <see cref="HttpLogContext"/>
-/// into a <typeparamref name="T"/> entry.
+/// A factory that converts a formatted message, <see cref="LogLevel"/>, an optional <see cref="HttpLogContext"/>,
+/// and an optional <see cref="Exception"/> into a <typeparamref name="T"/> entry.
 /// </param>
 /// <param name="httpContextAccessor">
 /// Optional <see cref="IHttpContextAccessor"/> used to enrich log entries with request metadata.
@@ -170,7 +170,7 @@ public sealed class BatchedLogger<T> : IDisposable
 /// </param>
 public sealed class BatchedLoggerProvider<T>(
 	BatchedLogger<T> batchedLogger,
-	Func<string, LogLevel, HttpLogContext?, T> entryFactory,
+	Func<string, LogLevel, HttpLogContext?, Exception?, T> entryFactory,
 	IHttpContextAccessor? httpContextAccessor = null) : ILoggerProvider
 {
 	/// <summary>
@@ -190,7 +190,7 @@ public sealed class BatchedLoggerProvider<T>(
 internal sealed class BatchedCategoryLogger<T>(
 	BatchedLogger<T> batchedLogger,
 	string categoryName,
-	Func<string, LogLevel, HttpLogContext?, T> entryFactory,
+	Func<string, LogLevel, HttpLogContext?, Exception?, T> entryFactory,
 	IHttpContextAccessor? httpContextAccessor) : ILogger
 {
 	public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
@@ -199,8 +199,8 @@ internal sealed class BatchedCategoryLogger<T>(
 	public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
 	{
 		if (!IsEnabled(logLevel)) return;
-		var message = $"{categoryName}: {formatter(state, exception)}{(exception != null ? $"{Environment.NewLine}{exception}" : "")}";
-		batchedLogger.Write(entryFactory(message, logLevel, BuildHttpContext()));
+		var message = $"{categoryName}: {formatter(state, exception)}";
+		batchedLogger.Write(entryFactory(message, logLevel, BuildHttpContext(), exception));
 	}
 
 	private HttpLogContext? BuildHttpContext()
