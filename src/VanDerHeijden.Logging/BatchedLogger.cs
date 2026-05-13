@@ -115,11 +115,11 @@ public sealed class BatchedLogger<T> : IDisposable
 				}
 			}
 		}
-		catch (OperationCanceledException)
+		catch (Exception) when (batch.Count > 0)
 		{
-			if (batch.Count > 0)
-				try { await ExecuteWriteAsync(batch, CancellationToken.None); } catch { }
+			try { await ExecuteWriteAsync(batch, CancellationToken.None); } catch { }
 		}
+		catch { }
 	}
 
 	private async Task ExecuteWriteAsync(List<T> batch, CancellationToken ct)
