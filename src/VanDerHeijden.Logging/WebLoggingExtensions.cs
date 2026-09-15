@@ -114,7 +114,8 @@ public static class WebLoggingExtensions
 			["TraceId"] = context.TraceIdentifier,
 			["Referer"] = context.Request.Headers[HeaderNames.Referer].FirstOrDefault() ?? string.Empty,
 			["UserAgent"] = context.Request.Headers[HeaderNames.UserAgent].FirstOrDefault() ?? string.Empty,
-			["SessionId"] = context.Session?.Id ?? string.Empty,
+			["SessionId"] = context.Items.TryGetValue("SessionGuid", out var sg) && sg is Guid guid 
+				? guid.ToString() : (context.Session?.Id ?? string.Empty),
 			["User"] = context.User?.Identity?.Name ?? "anonymous"
 		};
 
