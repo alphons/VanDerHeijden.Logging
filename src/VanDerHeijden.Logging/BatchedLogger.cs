@@ -214,12 +214,12 @@ internal sealed class BatchedCategoryLogger<T>(
 			ip = forwarded.Split(',')[0].Trim();
 
 		string? sessionId = null;
-		try { sessionId = ctx.Session?.Id; } catch (InvalidOperationException) { }
-
 		string? sessionGuid = null;
 		try
 		{
-			if (ctx.Session is { } session && session.TryGetValue("SessionGuid", out var bytes))
+			var session = ctx.Session;
+			sessionId = session.Id;
+			if (session.TryGetValue("SessionGuid", out var bytes))
 				sessionGuid = System.Text.Encoding.UTF8.GetString(bytes);
 		}
 		catch (InvalidOperationException) { }
