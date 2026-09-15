@@ -34,4 +34,7 @@ public class RedisLogEntry
 
 	/// <summary>Gets or sets the User-Agent header value, or <see langword="null"/> outside an HTTP context.</summary>
 	public string? UserAgent { get; set; }
+
+	/// <summary>Gets or sets the session identifier, or <see langword="null"/> outside an HTTP context.</summary>
+	public string? SessionId { get; set; }
 }

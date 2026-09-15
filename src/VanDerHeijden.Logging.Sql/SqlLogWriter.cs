@@ -16,7 +16,8 @@ namespace VanDerHeijden.Logging.Sql;
 ///     Method    NVARCHAR(10)    NULL,
 ///     ClientIp  NVARCHAR(45)    NULL,
 ///     Referer   NVARCHAR(2048)  NULL,
-///     UserAgent NVARCHAR(512)   NULL
+///     UserAgent NVARCHAR(512)   NULL,
+///     SessionId NVARCHAR(256)   NULL
 ///   );
 /// </summary>
 public sealed class SqlLogWriter(string connectionString, string tableName = "Logs") : IBatchedLogWriter<SqlLogEntry>
@@ -47,6 +48,7 @@ public sealed class SqlLogWriter(string connectionString, string tableName = "Lo
 		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.ClientIp),  "ClientIp");
 		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.Referer),   "Referer");
 		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.UserAgent), "UserAgent");
+		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.SessionId), "SessionId");
 
 		var table = ToDataTable(entries);
 		await bulkCopy.WriteToServerAsync(table, ct);
@@ -68,6 +70,7 @@ public sealed class SqlLogWriter(string connectionString, string tableName = "Lo
 		table.Columns.Add("ClientIp",  typeof(string));
 		table.Columns.Add("Referer",   typeof(string));
 		table.Columns.Add("UserAgent", typeof(string));
+		table.Columns.Add("SessionId", typeof(string));
 
 		foreach (var e in entries)
 			table.Rows.Add(
@@ -77,7 +80,8 @@ public sealed class SqlLogWriter(string connectionString, string tableName = "Lo
 				(object?)e.Method    ?? DBNull.Value,
 				(object?)e.ClientIp  ?? DBNull.Value,
 				(object?)e.Referer   ?? DBNull.Value,
-				(object?)e.UserAgent ?? DBNull.Value);
+				(object?)e.UserAgent ?? DBNull.Value,
+				(object?)e.SessionId ?? DBNull.Value);
 
 		return table;
 	}

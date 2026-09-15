@@ -43,7 +43,8 @@ public static class SqlLoggingBuilderExtensions
 					Method    = ctx?.Method,
 					ClientIp  = ctx?.ClientIp,
 					Referer   = ctx?.Referer,
-					UserAgent = ctx?.UserAgent
+					UserAgent = ctx?.UserAgent,
+					SessionId = ctx?.SessionId
 				},
 				httpContextAccessor
 			);
