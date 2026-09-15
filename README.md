@@ -8,11 +8,11 @@ Log entries are written to an in-memory `Channel<T>` and flushed to the target i
 
 | Package | Version | Description | NuGet |
 |---|---|---|---|
-| `VanDerHeijden.Logging` | 10.0.10 | Core abstractions | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging)](https://www.nuget.org/packages/VanDerHeijden.Logging) |
-| `VanDerHeijden.Logging.File` | 10.0.9 | Daily rotating file writer | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.File)](https://www.nuget.org/packages/VanDerHeijden.Logging.File) |
-| `VanDerHeijden.Logging.MongoDb` | 10.0.10 | MongoDB collection writer | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.MongoDb)](https://www.nuget.org/packages/VanDerHeijden.Logging.MongoDb) |
-| `VanDerHeijden.Logging.Sql` | 10.0.9 | SQL Server writer (SqlBulkCopy) | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.Sql)](https://www.nuget.org/packages/VanDerHeijden.Logging.Sql) |
-| `VanDerHeijden.Logging.Redis` | 10.0.9 | Redis list writer (RPUSH) | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.Redis)](https://www.nuget.org/packages/VanDerHeijden.Logging.Redis) |
+| `VanDerHeijden.Logging` | 10.0.11 | Core abstractions | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging)](https://www.nuget.org/packages/VanDerHeijden.Logging) |
+| `VanDerHeijden.Logging.File` | 10.0.11 | Daily rotating file writer | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.File)](https://www.nuget.org/packages/VanDerHeijden.Logging.File) |
+| `VanDerHeijden.Logging.MongoDb` | 10.0.11 | MongoDB collection writer | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.MongoDb)](https://www.nuget.org/packages/VanDerHeijden.Logging.MongoDb) |
+| `VanDerHeijden.Logging.Sql` | 10.0.11 | SQL Server writer (SqlBulkCopy) | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.Sql)](https://www.nuget.org/packages/VanDerHeijden.Logging.Sql) |
+| `VanDerHeijden.Logging.Redis` | 10.0.11 | Redis list writer (RPUSH) | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.Redis)](https://www.nuget.org/packages/VanDerHeijden.Logging.Redis) |
 
 ## Architecture
 
