@@ -6,13 +6,13 @@ Log entries are written to an in-memory `Channel<T>` and flushed to the target i
 
 ## Packages
 
-| Package | Description | NuGet |
-|---|---|---|
-| `VanDerHeijden.Logging` | Core abstractions | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging)](https://www.nuget.org/packages/VanDerHeijden.Logging) |
-| `VanDerHeijden.Logging.File` | Daily rotating file writer | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.File)](https://www.nuget.org/packages/VanDerHeijden.Logging.File) |
-| `VanDerHeijden.Logging.MongoDb` | MongoDB collection writer | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.MongoDb)](https://www.nuget.org/packages/VanDerHeijden.Logging.MongoDb) |
-| `VanDerHeijden.Logging.Sql` | SQL Server writer (SqlBulkCopy) | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.Sql)](https://www.nuget.org/packages/VanDerHeijden.Logging.Sql) |
-| `VanDerHeijden.Logging.Redis` | Redis list writer (RPUSH) | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.Redis)](https://www.nuget.org/packages/VanDerHeijden.Logging.Redis) |
+| Package | Version | Description | NuGet |
+|---|---|---|---|
+| `VanDerHeijden.Logging` | 10.0.9 | Core abstractions | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging)](https://www.nuget.org/packages/VanDerHeijden.Logging) |
+| `VanDerHeijden.Logging.File` | 10.0.9 | Daily rotating file writer | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.File)](https://www.nuget.org/packages/VanDerHeijden.Logging.File) |
+| `VanDerHeijden.Logging.MongoDb` | 10.0.10 | MongoDB collection writer | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.MongoDb)](https://www.nuget.org/packages/VanDerHeijden.Logging.MongoDb) |
+| `VanDerHeijden.Logging.Sql` | 10.0.9 | SQL Server writer (SqlBulkCopy) | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.Sql)](https://www.nuget.org/packages/VanDerHeijden.Logging.Sql) |
+| `VanDerHeijden.Logging.Redis` | 10.0.9 | Redis list writer (RPUSH) | [![NuGet](https://img.shields.io/nuget/v/VanDerHeijden.Logging.Redis)](https://www.nuget.org/packages/VanDerHeijden.Logging.Redis) |
 
 ## Architecture
 
@@ -92,7 +92,8 @@ CREATE TABLE Logs (
     Method    NVARCHAR(10)    NULL,
     ClientIp  NVARCHAR(45)    NULL,
     Referer   NVARCHAR(2048)  NULL,
-    UserAgent NVARCHAR(512)   NULL
+    UserAgent NVARCHAR(512)   NULL,
+    SessionId NVARCHAR(256)   NULL
 );
 ```
 
@@ -121,6 +122,8 @@ All writers automatically capture request metadata when `IHttpContextAccessor` i
 builder.Services.AddHttpContextAccessor(); // enable once in Program.cs
 ```
 
+`SessionId` requires session middleware to be configured (`builder.Services.AddSession()` and `app.UseSession()`); without an active session it is `null`.
+
 The following fields are added to each log entry when an HTTP request is active:
 
 | Field | Example |
@@ -130,6 +133,7 @@ The following fields are added to each log entry when an HTTP request is active:
 | `ClientIp` | `203.0.113.42` (respects `X-Forwarded-For`) |
 | `Referer` | `https://example.com` |
 | `UserAgent` | `Mozilla/5.0 ...` |
+| `SessionId` | `af3d9e...` (from `HttpContext.Session`) |
 
 Outside an HTTP context (background services, hosted workers) all HTTP fields are `null` / omitted.
 
