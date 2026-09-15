@@ -32,7 +32,7 @@ public static class FileLoggingBuilderExtensions
 				batchedLogger,
 				entryFactory: (category, message, _, exception, ctx) =>
 				{
-					var http = ctx is null ? "" : $" [{ctx.Method} {ctx.Path} {ctx.ClientIp} {ctx.SessionId}]";
+					var http = ctx is null ? "" : $" [{ctx.Method} {ctx.Path} {ctx.ClientIp} {ctx.SessionId} {ctx.SessionGuid}]";
 					var ex = exception is null ? "" : $"{Environment.NewLine}{exception}";
 					return $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}{http} [{category}] {message}{ex}{Environment.NewLine}";
 				},

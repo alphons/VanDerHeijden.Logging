@@ -46,6 +46,9 @@ public class LogEntry
 
 	/// <summary>Gets or sets the session identifier, or <see langword="null"/> outside an HTTP context.</summary>
 	public string? SessionId { get; set; }
+
+	/// <summary>Gets or sets the application-level session GUID (from <c>HttpContext.Session["SessionGuid"]</c>), or <see langword="null"/> when not set.</summary>
+	public string? SessionGuid { get; set; }
 }
 
 /// <summary>

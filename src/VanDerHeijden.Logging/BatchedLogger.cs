@@ -14,7 +14,8 @@ public sealed record HttpLogContext(
 	string? ClientIp,
 	string? Referer,
 	string? UserAgent,
-	string? SessionId);
+	string? SessionId,
+	string? SessionGuid);
 
 /// <summary>
 /// Defines a writer that receives a batch of log entries and persists them to a backing store.
@@ -215,13 +216,22 @@ internal sealed class BatchedCategoryLogger<T>(
 		string? sessionId = null;
 		try { sessionId = ctx.Session?.Id; } catch (InvalidOperationException) { }
 
+		string? sessionGuid = null;
+		try
+		{
+			if (ctx.Session is { } session && session.TryGetValue("SessionGuid", out var bytes))
+				sessionGuid = System.Text.Encoding.UTF8.GetString(bytes);
+		}
+		catch (InvalidOperationException) { }
+
 		return new HttpLogContext(
 			ctx.Request.Path.ToString(),
 			ctx.Request.Method,
 			ip ?? "Unknown",
 			ctx.Request.Headers["Referer"].ToString(),
 			ctx.Request.Headers["User-Agent"].ToString(),
-			sessionId ?? string.Empty
+			sessionId ?? string.Empty,
+			sessionGuid
 		);
 	}
 }

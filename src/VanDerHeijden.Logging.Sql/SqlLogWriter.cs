@@ -16,8 +16,9 @@ namespace VanDerHeijden.Logging.Sql;
 ///     Method    NVARCHAR(10)    NULL,
 ///     ClientIp  NVARCHAR(45)    NULL,
 ///     Referer   NVARCHAR(2048)  NULL,
-///     UserAgent NVARCHAR(512)   NULL,
-///     SessionId NVARCHAR(256)   NULL
+///     UserAgent   NVARCHAR(512)   NULL,
+///     SessionId   NVARCHAR(256)   NULL,
+///     SessionGuid NVARCHAR(36)    NULL
 ///   );
 /// </summary>
 public sealed class SqlLogWriter(string connectionString, string tableName = "Logs") : IBatchedLogWriter<SqlLogEntry>
@@ -49,6 +50,7 @@ public sealed class SqlLogWriter(string connectionString, string tableName = "Lo
 		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.Referer),   "Referer");
 		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.UserAgent), "UserAgent");
 		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.SessionId), "SessionId");
+		bulkCopy.ColumnMappings.Add(nameof(SqlLogEntry.SessionGuid), "SessionGuid");
 
 		var table = ToDataTable(entries);
 		await bulkCopy.WriteToServerAsync(table, ct);
@@ -71,17 +73,19 @@ public sealed class SqlLogWriter(string connectionString, string tableName = "Lo
 		table.Columns.Add("Referer",   typeof(string));
 		table.Columns.Add("UserAgent", typeof(string));
 		table.Columns.Add("SessionId", typeof(string));
+		table.Columns.Add("SessionGuid", typeof(string));
 
 		foreach (var e in entries)
 			table.Rows.Add(
 				e.Timestamp, e.Level, e.Category, e.Message,
-				(object?)e.Exception ?? DBNull.Value,
-				(object?)e.Path      ?? DBNull.Value,
-				(object?)e.Method    ?? DBNull.Value,
-				(object?)e.ClientIp  ?? DBNull.Value,
-				(object?)e.Referer   ?? DBNull.Value,
-				(object?)e.UserAgent ?? DBNull.Value,
-				(object?)e.SessionId ?? DBNull.Value);
+				(object?)e.Exception   ?? DBNull.Value,
+				(object?)e.Path        ?? DBNull.Value,
+				(object?)e.Method      ?? DBNull.Value,
+				(object?)e.ClientIp    ?? DBNull.Value,
+				(object?)e.Referer     ?? DBNull.Value,
+				(object?)e.UserAgent   ?? DBNull.Value,
+				(object?)e.SessionId   ?? DBNull.Value,
+				(object?)e.SessionGuid ?? DBNull.Value);
 
 		return table;
 	}

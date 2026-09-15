@@ -92,8 +92,9 @@ CREATE TABLE Logs (
     Method    NVARCHAR(10)    NULL,
     ClientIp  NVARCHAR(45)    NULL,
     Referer   NVARCHAR(2048)  NULL,
-    UserAgent NVARCHAR(512)   NULL,
-    SessionId NVARCHAR(256)   NULL
+    UserAgent   NVARCHAR(512)   NULL,
+    SessionId   NVARCHAR(256)   NULL,
+    SessionGuid NVARCHAR(36)    NULL
 );
 ```
 
@@ -134,6 +135,7 @@ The following fields are added to each log entry when an HTTP request is active:
 | `Referer` | `https://example.com` |
 | `UserAgent` | `Mozilla/5.0 ...` |
 | `SessionId` | `af3d9e...` (from `HttpContext.Session`) |
+| `SessionGuid` | `3fa85f64-5717-4562-b3fc-2c963f66afa6` (from `HttpContext.Session["SessionGuid"]`, when set by the application) |
 
 Outside an HTTP context (background services, hosted workers) all HTTP fields are `null` / omitted.
 

@@ -51,7 +51,8 @@ public static class MongoDbLoggingBuilderExtensions
 					ClientIp  = ctx?.ClientIp,
 					Referer   = ctx?.Referer,
 					UserAgent = ctx?.UserAgent,
-					SessionId = ctx?.SessionId
+					SessionId = ctx?.SessionId,
+					SessionGuid = ctx?.SessionGuid
 				},
 				httpContextAccessor
 			);
