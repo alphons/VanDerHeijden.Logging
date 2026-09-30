@@ -1,21 +1,43 @@
-namespace VanDerHeijden.Logging.Redis;
+using Microsoft.Extensions.Logging;
+
+namespace VanDerHeijden.Logging;
 
 /// <summary>
-/// Represents a single log entry serialized as JSON and pushed to a Redis list.
+/// Represents a single structured log entry, shared by all writers.
 /// </summary>
-public class RedisLogEntry
+public class LogEntry
 {
 	/// <summary>Gets or sets the UTC timestamp when the log entry was created.</summary>
 	public DateTime Timestamp { get; set; }
 
-	/// <summary>Gets or sets the log level (e.g. <c>"Information"</c>, <c>"Error"</c>).</summary>
-	public string Level { get; set; } = string.Empty;
+	/// <summary>Gets or sets the log level.</summary>
+	public LogLevel Level { get; set; }
+
+	/// <summary>Gets or sets the numeric event id (<c>0</c> when none was supplied).</summary>
+	public int EventId { get; set; }
+
+	/// <summary>Gets or sets the event name, or <see langword="null"/> if none was supplied.</summary>
+	public string? EventName { get; set; }
 
 	/// <summary>Gets or sets the logger category name.</summary>
 	public string Category { get; set; } = string.Empty;
 
 	/// <summary>Gets or sets the formatted log message.</summary>
 	public string Message { get; set; } = string.Empty;
+
+	/// <summary>
+	/// Gets or sets the original message template (e.g. <c>"User {UserId} logged in"</c>),
+	/// or <see langword="null"/> when the log call carried no template.
+	/// </summary>
+	public string? MessageTemplate { get; set; }
+
+	/// <summary>
+	/// Gets or sets the structured properties extracted from the log state, or <see langword="null"/> when there are none.
+	/// Values are snapshotted at log time and limited to <see cref="string"/>, <see cref="bool"/>, <see cref="int"/>,
+	/// <see cref="long"/>, <see cref="double"/>, <see cref="decimal"/>, <see cref="Guid"/> and UTC <see cref="DateTime"/>;
+	/// enums are stored by name and anything else as its string representation.
+	/// </summary>
+	public Dictionary<string, object?>? Properties { get; set; }
 
 	/// <summary>Gets or sets the string representation of an associated exception, or <see langword="null"/> if none.</summary>
 	public string? Exception { get; set; }

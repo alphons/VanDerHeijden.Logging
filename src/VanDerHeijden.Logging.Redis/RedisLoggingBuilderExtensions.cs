@@ -32,26 +32,8 @@ public static class RedisLoggingBuilderExtensions
 		{
 			var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
 			var logWriter = new RedisLogWriter(database, listKey, ttl);
-			var batchedLogger = new BatchedLogger<RedisLogEntry>(logWriter, batchSize: 200, maxIdleMs: 2000, fullMode: BoundedChannelFullMode.DropOldest);
-			return new BatchedLoggerProvider<RedisLogEntry>(
-				batchedLogger,
-				entryFactory: (category, message, logLevel, exception, ctx) => new RedisLogEntry
-				{
-					Timestamp = DateTime.UtcNow,
-					Level     = logLevel.ToString(),
-					Category  = category,
-					Message   = message,
-					Exception = exception?.ToString(),
-					Path      = ctx?.Path,
-					Method    = ctx?.Method,
-					ClientIp  = ctx?.ClientIp,
-					Referer   = ctx?.Referer,
-					UserAgent = ctx?.UserAgent,
-					SessionId = ctx?.SessionId,
-					SessionGuid = ctx?.SessionGuid
-				},
-				httpContextAccessor
-			);
+			var batchedLogger = new BatchedLogger<LogEntry>(logWriter, batchSize: 200, maxIdleMs: 2000, fullMode: BoundedChannelFullMode.DropOldest);
+			return new BatchedLoggerProvider<LogEntry>(batchedLogger, entryFactory: e => e, httpContextAccessor);
 		});
 		return builder;
 	}

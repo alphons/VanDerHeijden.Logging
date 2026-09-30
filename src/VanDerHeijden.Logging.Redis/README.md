@@ -28,9 +28,11 @@ builder.Logging.AddRedisLogger(
 {
   "timestamp": "2026-02-22T14:03:12.456Z",
   "level": "Information",
+  "eventId": 0,
   "category": "MyApp.Service",
-  "message": "MyApp.Service: User logged in",
-  "exception": null,
+  "message": "User 42 logged in",
+  "messageTemplate": "User {UserId} logged in",
+  "properties": { "UserId": 42 },
   "path": "/api/users/login",
   "method": "POST",
   "clientIp": "203.0.113.42",
@@ -39,13 +41,17 @@ builder.Logging.AddRedisLogger(
 }
 ```
 
+This is the shared `VanDerHeijden.Logging.LogEntry` (`RedisLogEntry` has been removed), serialized by the shared
+`LogEntryJsonWriter` — the same field names as the JSON file logger. `timestamp` is always UTC. Fields that are
+`null` (`eventName`, `exception`, `sessionId`, `sessionGuid`, ...) are omitted.
+
 The HTTP fields are populated automatically when `IHttpContextAccessor` is registered:
 
 ```csharp
 builder.Services.AddHttpContextAccessor();
 ```
 
-Outside an HTTP context they are `null` and omitted from the JSON output.
+Outside an HTTP context they are omitted.
 
 ## Notes
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Threading.Channels;
 
@@ -15,48 +16,49 @@ public static class MongoDbLoggingBuilderExtensions
 	/// Adds a MongoDB logger that inserts log entries into the specified collection in batches.
 	/// </summary>
 	/// <param name="builder">The <see cref="ILoggingBuilder"/> to configure.</param>
-	/// <param name="collection">The MongoDB collection that will receive <see cref="LogEntry"/> documents.</param>
+	/// <param name="collection">The MongoDB collection that will receive the log documents.</param>
+	/// <param name="configure">Optional callback to configure <see cref="MongoDbLoggerOptions"/>.</param>
 	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
-	public static ILoggingBuilder AddMongoDbLogger(this ILoggingBuilder builder, IMongoCollection<LogEntry> collection) =>
-		builder.AddMongoDbLogger(_ => collection);
+	public static ILoggingBuilder AddMongoDbLogger(this ILoggingBuilder builder, IMongoCollection<BsonDocument> collection, Action<MongoDbLoggerOptions>? configure = null) =>
+		builder.AddMongoDbLogger(sp => collection, configure);
 
 	/// <summary>
 	/// Adds a MongoDB logger that resolves the collection from the DI container at startup.
-	/// Use this overload when <see cref="IMongoCollection{TDocument}"/> is already registered as a service.
 	/// </summary>
 	/// <param name="builder">The <see cref="ILoggingBuilder"/> to configure.</param>
 	/// <param name="collectionFactory">
 	/// A factory that receives the <see cref="IServiceProvider"/> and returns the
-	/// <see cref="IMongoCollection{TDocument}"/> to write log entries to.
+	/// <see cref="IMongoCollection{TDocument}"/> to write log documents to.
 	/// </param>
+	/// <param name="configure">Optional callback to configure <see cref="MongoDbLoggerOptions"/>.</param>
 	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
-	public static ILoggingBuilder AddMongoDbLogger(this ILoggingBuilder builder, Func<IServiceProvider, IMongoCollection<LogEntry>> collectionFactory)
+	public static ILoggingBuilder AddMongoDbLogger(this ILoggingBuilder builder, Func<IServiceProvider, IMongoCollection<BsonDocument>> collectionFactory, Action<MongoDbLoggerOptions>? configure = null)
 	{
 		builder.Services.AddSingleton<ILoggerProvider>(sp =>
 		{
-			var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
-			var logWriter = new MongoDbLogWriter(collectionFactory(sp));
-			var batchedLogger = new BatchedLogger<LogEntry>(logWriter, batchSize: 100, maxIdleMs: 3000, fullMode: BoundedChannelFullMode.DropOldest);
-			return new BatchedLoggerProvider<LogEntry>(
-				batchedLogger,
-				entryFactory: (category, message, logLevel, exception, ctx) => new LogEntry
-				{
-					Timestamp = DateTime.UtcNow,
-					Level     = logLevel.ToString(),
-					Category  = category,
-					Message   = message,
-					Exception = exception?.ToString(),
-					Path      = ctx?.Path,
-					Method    = ctx?.Method,
-					ClientIp  = ctx?.ClientIp,
-					Referer   = ctx?.Referer,
-					UserAgent = ctx?.UserAgent,
-					SessionId = ctx?.SessionId,
-					SessionGuid = ctx?.SessionGuid
-				},
-				httpContextAccessor
-			);
+			var options = new MongoDbLoggerOptions();
+			configure?.Invoke(options);
+			return CreateProvider(sp, collectionFactory(sp), options);
 		});
 		return builder;
+	}
+
+	internal static ILoggerProvider CreateProvider(IServiceProvider sp, IMongoCollection<BsonDocument> collection, MongoDbLoggerOptions options)
+	{
+		if (options.CreateIndexes)
+		{
+			// Runs in the background: an unreachable server must not block or break application startup.
+			Task.Run(async () =>
+			{
+				try { await MongoDbLogIndexes.EnsureAsync(collection, options); } catch { }
+			});
+		}
+
+		var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
+		var logWriter = new MongoDbLogWriter(collection);
+		var batchedLogger = new BatchedLogger<BsonDocument>(logWriter, batchSize: 100, maxIdleMs: 3000, fullMode: BoundedChannelFullMode.DropOldest);
+
+		// The factory runs inside ILogger.Log, so the BSON document is a snapshot taken at log time.
+		return new BatchedLoggerProvider<BsonDocument>(batchedLogger, LogEntryBsonConverter.ToDocument, httpContextAccessor);
 	}
 }

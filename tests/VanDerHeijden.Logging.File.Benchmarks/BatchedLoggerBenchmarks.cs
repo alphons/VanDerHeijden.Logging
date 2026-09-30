@@ -4,12 +4,12 @@ using VanDerHeijden.Logging;
 using VanDerHeijden.Logging.File;
 
 /// <summary>
-/// Meet de end-to-end throughput van BatchedLogger + FileLogWriter:
-/// hoe snel kunnen berichten via de channel worden aangeboden (Write),
-/// en hoe lang duurt het tot alles geflushed is (Dispose).
+/// Measures the end-to-end throughput of BatchedLogger + FileLogWriter:
+/// how fast messages can be offered to the channel (Write),
+/// and how long it takes until everything has been flushed (Dispose).
 ///
-/// Logger en writer worden per iteratie opnieuw aangemaakt via IterationSetup/Cleanup
-/// zodat elke meting met een frisse, niet-disposed instantie werkt.
+/// The logger and writer are recreated for every iteration via IterationSetup/Cleanup
+/// so that each measurement uses a fresh, non-disposed instance.
 /// </summary>
 [MemoryDiagnoser]
 public class BatchedLoggerBenchmarks
@@ -27,7 +27,7 @@ public class BatchedLoggerBenchmarks
 	{
 		logDirectory = Path.Combine(Path.GetTempPath(), $"bench-batched-{Guid.NewGuid():N}");
 		Directory.CreateDirectory(logDirectory);
-		message = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [Information] Benchmark test message{Environment.NewLine}";
+		message = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} [Information] Benchmark test message{Environment.NewLine}";
 	}
 
 	[IterationSetup]
@@ -44,7 +44,7 @@ public class BatchedLoggerBenchmarks
 	[IterationCleanup]
 	public void IterationCleanup()
 	{
-		// Dispose wacht tot de consumer alle berichten heeft geflushed naar schijf
+		// Dispose waits until the consumer has flushed all messages to disk
 		logger.Dispose();
 	}
 
@@ -55,8 +55,8 @@ public class BatchedLoggerBenchmarks
 	}
 
 	/// <summary>
-	/// Meet de volledige pipeline: N berichten enqueuen + wachten tot alles naar schijf is.
-	/// De Dispose() in IterationCleanup wacht tot de consumer klaar is, maar valt buiten de meting.
+	/// Measures the full pipeline: enqueueing N messages + waiting until everything is on disk.
+	/// The Dispose() in IterationCleanup waits for the consumer to finish, but falls outside the measurement.
 	/// </summary>
 	[Benchmark(Description = "End-to-end (enqueue + flush)")]
 	public void EndToEnd()

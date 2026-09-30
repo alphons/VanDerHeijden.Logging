@@ -29,26 +29,8 @@ public static class SqlLoggingBuilderExtensions
 		{
 			var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
 			var logWriter = new SqlLogWriter(connectionString, tableName);
-			var batchedLogger = new BatchedLogger<SqlLogEntry>(logWriter, batchSize: 200, maxIdleMs: 4000, fullMode: BoundedChannelFullMode.Wait);
-			return new BatchedLoggerProvider<SqlLogEntry>(
-				batchedLogger,
-				entryFactory: (category, message, logLevel, exception, ctx) => new SqlLogEntry
-				{
-					Timestamp = DateTime.UtcNow,
-					Level     = logLevel.ToString(),
-					Category  = category,
-					Message   = message,
-					Exception = exception?.ToString(),
-					Path      = ctx?.Path,
-					Method    = ctx?.Method,
-					ClientIp  = ctx?.ClientIp,
-					Referer   = ctx?.Referer,
-					UserAgent = ctx?.UserAgent,
-					SessionId = ctx?.SessionId,
-					SessionGuid = ctx?.SessionGuid
-				},
-				httpContextAccessor
-			);
+			var batchedLogger = new BatchedLogger<LogEntry>(logWriter, batchSize: 200, maxIdleMs: 4000, fullMode: BoundedChannelFullMode.Wait);
+			return new BatchedLoggerProvider<LogEntry>(batchedLogger, entryFactory: e => e, httpContextAccessor);
 		});
 		return builder;
 	}

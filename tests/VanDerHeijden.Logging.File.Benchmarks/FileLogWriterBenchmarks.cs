@@ -9,18 +9,18 @@ public class FileLogWriterBenchmarks
 	private string logDirectory = null!;
 	private List<string> batch = null!;
 
-	// Gevarieerde batch groottes om het gedrag onder verschillende loads te meten
+	// Varied batch sizes to measure the behaviour under different loads
 	[Params(1, 10, 100, 500)]
 	public int BatchSize { get; set; }
 
-	// Gevarieerde berichtlengte: kort (typisch debug), middel (typisch info), lang (met stack trace)
+	// Varied message length: short (typical debug), medium (typical info), long (with stack trace)
 	[Params(80, 256, 1024)]
 	public int MessageLength { get; set; }
 
-	// Aantal keer dat de batch per iteratie wordt herhaald zodat de iteratietijd >100ms wordt,
-	// wat BenchmarkDotNet nodig heeft voor betrouwbare metingen.
-	// 2000 herhalingen × ~60us per flush ≈ 120ms per iteratie (kleinste combinatie: BatchSize=1, 80 bytes).
-	// Voor de grootste combinatie (BatchSize=500, 1024 bytes) wordt dit ~3s — acceptabel bij 3 iteraties.
+	// Number of times the batch is repeated per iteration so that the iteration time exceeds 100ms,
+	// which BenchmarkDotNet needs for reliable measurements.
+	// 2000 repetitions × ~60us per flush ≈ 120ms per iteration (smallest combination: BatchSize=1, 80 bytes).
+	// For the largest combination (BatchSize=500, 1024 bytes) this becomes ~3s — acceptable with 3 iterations.
 	private const int Repeat = 2000;
 
 	[GlobalSetup]
@@ -34,7 +34,7 @@ public class FileLogWriterBenchmarks
 	public void IterationSetup()
 	{
 		writer = new FileLogWriter(logDirectory);
-		var message = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [Information] " + new string('x', Math.Max(0, MessageLength - 40));
+		var message = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} [Information] " + new string('x', Math.Max(0, MessageLength - 40));
 		batch = [.. Enumerable.Range(0, BatchSize).Select(i => $"{message} #{i}{Environment.NewLine}")];
 	}
 
@@ -48,8 +48,8 @@ public class FileLogWriterBenchmarks
 	}
 
 	/// <summary>
-	/// Meet de gemiddelde tijd per WriteBatchAsync-aanroep over <see cref="Repeat"/> herhalingen.
-	/// Eén iteratie schrijft Repeat × BatchSize berichten zodat de iteratietijd >100ms is.
+	/// Measures the mean time per WriteBatchAsync call over <see cref="Repeat"/> repetitions.
+	/// One iteration writes Repeat × BatchSize messages so that the iteration time exceeds 100ms.
 	/// </summary>
 	[Benchmark(Description = "WriteBatchAsync", OperationsPerInvoke = Repeat)]
 	[BenchmarkCategory("FileLogWriter")]

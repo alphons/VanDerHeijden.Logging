@@ -1,5 +1,4 @@
 using StackExchange.Redis;
-using System.Text.Json;
 
 namespace VanDerHeijden.Logging.Redis;
 
@@ -12,12 +11,9 @@ namespace VanDerHeijden.Logging.Redis;
 public sealed class RedisLogWriter(
 	IDatabase database,
 	string listKey = "logs",
-	TimeSpan? ttl = null) : IBatchedLogWriter<RedisLogEntry>
+	TimeSpan? ttl = null) : IBatchedLogWriter<LogEntry>
 {
-	private static readonly JsonSerializerOptions JsonOptions = new()
-	{
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-	};
+	private readonly LogEntryJsonWriter json = new();
 
 	/// <summary>
 	/// Serializes all entries as JSON and appends them to the Redis list in a single <c>RPUSH</c> command.
@@ -25,11 +21,15 @@ public sealed class RedisLogWriter(
 	/// </summary>
 	/// <param name="entries">The log entries to push.</param>
 	/// <param name="ct">A token that can cancel the operation.</param>
-	public async Task WriteBatchAsync(List<RedisLogEntry> entries, CancellationToken ct)
+	public async Task WriteBatchAsync(List<LogEntry> entries, CancellationToken ct)
 	{
-		var values = entries
-			.Select(e => (RedisValue)JsonSerializer.Serialize(e, JsonOptions))
-			.ToArray();
+		var values = new RedisValue[entries.Count];
+		for (int i = 0; i < values.Length; i++)
+		{
+			json.Clear();
+			json.Write(entries[i]);
+			values[i] = json.ToArray();
+		}
 
 		await database.ListRightPushAsync(listKey, values);
 

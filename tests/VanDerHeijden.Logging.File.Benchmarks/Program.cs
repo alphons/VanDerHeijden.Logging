@@ -1,5 +1,5 @@
 using BenchmarkDotNet.Running;
 
-// Draai alle benchmarks in de assembly
-// Gebruik: dotnet run -c Release
+// Run all benchmarks in the assembly
+// Usage: dotnet run -c Release
 BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).RunAll();

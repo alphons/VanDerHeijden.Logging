@@ -2,7 +2,7 @@
 
 File log writer for [VanDerHeijden.Logging](https://www.nuget.org/packages/VanDerHeijden.Logging).
 
-Writes batched log entries to **daily rotating text files** using async file I/O with a 64 KB write buffer. A new file is opened automatically at midnight without restarting the application.
+Writes batched log entries to **daily rotating files** — plain text or JSON Lines — using async file I/O with a 64 KB write buffer. A new file is opened automatically at midnight (UTC) without restarting the application.
 
 ## Installation
 
@@ -13,31 +13,49 @@ dotnet add package VanDerHeijden.Logging.File
 ## Usage
 
 ```csharp
-builder.Logging.AddFileLogger(logDirectory: "Logs");
+builder.Logging.AddFileLogger(logDirectory: "Logs");                          // text
+builder.Logging.AddFileLogger(logDirectory: "Logs", format: LogFormat.Json);  // JSON Lines
 ```
 
-Log files are written to the `Logs` directory (relative to the working directory) as `log-yyyyMMdd.txt`.
+Log files are written to the `Logs` directory (relative to the working directory) as
+`log-yyyyMMdd.txt` (`LogFormat.Text`) or `log-yyyyMMdd.jsonl` (`LogFormat.Json`).
+Timestamps and the date in the file name are UTC.
 
 ## Options
 
 | Parameter | Default | Description |
 |---|---|---|
 | `logDirectory` | `"Logs"` | Directory where log files are created |
-| `batchSize` | 200 | Maximum entries flushed per write |
-| `maxIdleMs` | 4000 | Maximum ms between flushes when batch is not full |
-| `fullMode` | `Wait` | Channel backpressure strategy |
+| `format` | `LogFormat.Text` | `Text` or `Json` (JSON Lines) |
 
-## Log format
+The file logger uses `batchSize` 200, `maxIdleMs` 4000 and `fullMode` `Wait`: when the internal
+channel (10 000 entries) is full, logging calls block until the writer catches up — nothing is dropped.
+
+## Text format
 
 Without HTTP context:
 ```
-2026-02-22 14:03:12.456 MyApp.Service: User logged in
+2026-02-22 14:03:12.456Z [Information] [MyApp.Service] User 42 logged in
 ```
 
-With HTTP context (when `IHttpContextAccessor` is registered):
+With HTTP context (when `IHttpContextAccessor` is registered) — method, path, client IP, session id, session GUID:
 ```
-2026-02-22 14:03:12.456 [POST /api/users/login 203.0.113.42] MyApp.Service: User logged in
+2026-02-22 14:03:12.456Z [Information] [POST /api/users/login 203.0.113.42 af3d9e 3fa85f64-5717-4562-b3fc-2c963f66afa6] [MyApp.Service] User 42 logged in
 ```
+
+An exception, if any, follows on the next lines.
+
+## JSON format
+
+One JSON object per line, written with `Utf8JsonWriter`. For `logger.LogInformation("User {UserId} logged in", 42)`:
+
+```json
+{"timestamp":"2026-02-22T14:03:12.4561234Z","level":"Information","eventId":0,"category":"MyApp.Service","message":"User 42 logged in","messageTemplate":"User {UserId} logged in","properties":{"UserId":42},"path":"/api/users/login","method":"POST","clientIp":"203.0.113.42"}
+```
+
+`eventName`, `exception`, `referer`, `userAgent`, `sessionId` and `sessionGuid` are included when set; `null`
+fields are omitted. Property values are written as JSON strings, numbers or booleans; other types are written
+as their string representation. The JSON is produced by the shared `LogEntryJsonWriter` from the core package.
 
 Register `IHttpContextAccessor` in `Program.cs` to enable HTTP enrichment:
 

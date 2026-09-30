@@ -2,7 +2,7 @@ namespace VanDerHeijden.Logging.File;
 
 /// <summary>
 /// Writes batches of log messages to a daily rotating text file.
-/// A new file is opened automatically whenever the calendar date changes.
+/// A new file is opened automatically whenever the UTC calendar date changes.
 /// </summary>
 /// <param name="logDirectory">
 /// Directory in which log files are created. Defaults to <c>"Logs"</c>.
@@ -22,7 +22,7 @@ public sealed class FileLogWriter(string logDirectory = "Logs") : IBatchedLogWri
 	/// <param name="ct">A token that can cancel the operation.</param>
 	public async Task WriteBatchAsync(List<string> messages, CancellationToken ct)
 	{
-		var today = DateTime.Today;
+		var today = DateTime.UtcNow.Date;
 		if (writer == null || today != currentDate)
 		{
 			await DisposeAsync();

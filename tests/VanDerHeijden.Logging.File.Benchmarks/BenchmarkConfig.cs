@@ -4,10 +4,10 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Reports;
 
 /// <summary>
-/// Gedeelde BenchmarkDotNet configuratie:
-/// - 1 warmup iteratie zodat JIT en OS file caches stabiel zijn
-/// - 3 meetiteraties voor een betrouwbaar gemiddelde zonder te lang te wachten
-/// - Throughput als primaire statistiek
+/// Shared BenchmarkDotNet configuration:
+/// - 1 warmup iteration so the JIT and OS file caches are stable
+/// - 3 measured iterations for a reliable mean without waiting too long
+/// - Throughput as the primary statistic
 /// </summary>
 public class BenchmarkConfig : ManualConfig
 {

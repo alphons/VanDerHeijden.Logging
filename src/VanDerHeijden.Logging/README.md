@@ -4,6 +4,8 @@ Core abstractions for high-performance batched logging in .NET 10.
 
 ## What's in this package
 
+- `LogEntry` — the structured log entry shared by all writers
+- `LogEntryJsonWriter` — shared `Utf8JsonWriter`-based JSON serializer for `LogEntry`
 - `IBatchedLogWriter<T>` — implement this interface to create a custom log writer
 - `BatchedLogger<T>` — background consumer that batches entries and calls your writer
 - `BatchedLoggerProvider<T>` — `ILoggerProvider` adapter for use with `Microsoft.Extensions.Logging`
@@ -20,9 +22,9 @@ This package contains no writer implementation. Install one of the writer packag
 ## Implementing a custom writer
 
 ```csharp
-public sealed class MyWriter : IBatchedLogWriter<string>
+public sealed class MyWriter : IBatchedLogWriter<LogEntry>
 {
-    public async Task WriteBatchAsync(List<string> entries, CancellationToken ct)
+    public async Task WriteBatchAsync(List<LogEntry> entries, CancellationToken ct)
     {
         // write entries to your target
     }
@@ -38,17 +40,56 @@ builder.Logging.Services.AddSingleton<ILoggerProvider>(sp =>
 {
     var httpContextAccessor = sp.GetService<IHttpContextAccessor>(); // optional
     var writer = new MyWriter();
-    var logger = new BatchedLogger<string>(writer, batchSize: 200, maxIdleMs: 4000);
-    return new BatchedLoggerProvider<string>(
+    var logger = new BatchedLogger<LogEntry>(writer, batchSize: 200, maxIdleMs: 4000);
+    return new BatchedLoggerProvider<LogEntry>(
         logger,
-        entryFactory: (msg, level, ctx) => msg,
+        entryFactory: entry => entry,
         httpContextAccessor);
 });
 ```
 
-The `entryFactory` receives an optional `HttpLogContext` with request metadata (`Path`, `Method`, `ClientIp`,
-`Referer`, `UserAgent`, `SessionId`). It is `null` when no HTTP context is active or when
-`IHttpContextAccessor` is not registered.
+The `entryFactory` is a `Func<LogEntry, T>` that runs on the logging thread; return the entry itself or project it
+to your own type (for example a pre-formatted `string`).
+
+## LogEntry
+
+| Property | Description |
+|---|---|
+| `Timestamp` | `DateTime`, always UTC |
+| `Level` | `LogLevel` |
+| `EventId` / `EventName` | From the `EventId` passed to the log call |
+| `Category` | Logger category name |
+| `Message` | Formatted message |
+| `MessageTemplate` | The original template (`{OriginalFormat}`), e.g. `User {UserId} logged in` |
+| `Properties` | `Dictionary<string, object?>` with the named template arguments; `null` when there are none |
+| `Exception` | `exception.ToString()`, or `null` |
+| `Path`, `Method`, `ClientIp`, `Referer`, `UserAgent`, `SessionId`, `SessionGuid` | Request metadata; `null` when no HTTP context is active or `IHttpContextAccessor` is not registered |
+
+Property values are snapshotted at log time. They keep their type when they are a `string`, `bool`, `int`, `long`,
+`double`, `decimal`, `Guid` or `DateTime` (converted to UTC); smaller numeric types are widened, enums are stored by
+name and anything else is stored as its string representation.
+
+## LogEntryJsonWriter
+
+`LogEntryJsonWriter` serializes entries with `Utf8JsonWriter` into a reusable buffer and is the single place where the
+JSON field names are defined. It is not thread-safe; use one instance per log writer.
+
+```csharp
+var json = new LogEntryJsonWriter();
+json.Clear();
+json.WriteLine(entry);                  // one JSON object + '\n' (JSON Lines)
+await stream.WriteAsync(json.WrittenMemory, ct);
+
+json.Clear();
+json.WriteProperties(entry.Properties); // only the properties object
+string propertiesJson = json.ToString();
+```
+
+## Backpressure
+
+`BatchedLogger<T>.Write` honours the `fullMode` passed to the constructor. With `BoundedChannelFullMode.Wait`
+(the default) the call blocks while the 10 000-entry channel is full, so nothing is dropped; with the drop modes
+it never blocks.
 
 ## Repository
 
