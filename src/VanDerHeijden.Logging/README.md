@@ -69,11 +69,21 @@ Property values are snapshotted at log time. They keep their type when they are 
 `double`, `decimal`, `Guid` or `DateTime` (converted to UTC); smaller numeric types are widened, enums are stored by
 name, and `TimeSpan` and other formattable values are stored as strings.
 
-Objects, records and collections are serialized to JSON at log time, so `logger.LogInformation("Order for {Customer}", customer)`
-stores `"Customer": { "Name": "Alice", "Number": 7, "Tags": ["vip"] }` as a nested object (a subdocument in MongoDB)
-instead of the `ToString()` text. Enums inside objects are written by name. A value falls back to `ToString()` when it
-cannot be serialized, has no public properties, or its JSON exceeds 32 KB. The formatted `Message` is unaffected: it
-still contains the `ToString()` text, as produced by `Microsoft.Extensions.Logging`.
+Objects, records and collections are stored as nested JSON, so `logger.LogInformation("Order for {Customer}", customer)`
+stores `"Customer": { "Name": "Alice", "Number": 7, "Tags": ["vip"] }` (a subdocument in MongoDB) instead of the
+`ToString()` text. To keep the logging call cheap, only a **shallow clone** of the object is taken at log time; the
+JSON is produced later, on the background writer thread:
+
+- Top-level members are frozen at log time: changing `customer.Name` afterwards does not affect the log.
+- Nested objects and collections are shared with the original: changing `customer.Address.City` or adding to
+  `customer.Tags` before the batch is written can show up in the log. Log immutable data (records) or the specific
+  values you need when that matters.
+- Objects that must not be cloned — anything `IDisposable` or with a finalizer, types, delegates, exceptions, tasks —
+  are stored as their `ToString()` text, as are values that cannot be serialized, have no public properties or
+  exceed 32 KB of JSON.
+
+Enums inside objects are written by name. The formatted `Message` is unaffected: it still contains the `ToString()`
+text, as produced by `Microsoft.Extensions.Logging`.
 
 ## LogEntryJsonWriter
 

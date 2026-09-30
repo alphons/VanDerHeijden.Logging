@@ -111,7 +111,7 @@ public sealed class LogEntryJsonWriter
 				case decimal m: json.WriteNumberValue(m); break;
 				case DateTime dt: json.WriteStringValue(dt); break;
 				case Guid g: json.WriteStringValue(g); break;
-				case JsonElement element: element.WriteTo(json); break;
+				case JsonSnapshot snapshot: json.WriteRawValue(snapshot.Utf8Json.Span, skipInputValidation: true); break;
 				default: json.WriteStringValue(value.ToString()); break;
 			}
 		}

@@ -6,13 +6,13 @@ namespace VanDerHeijden.Logging.MongoDb;
 
 /// <summary>
 /// Converts a <see cref="LogEntry"/> into the <see cref="BsonDocument"/> stored in MongoDB.
-/// The conversion runs on the logging thread, so the driver only ever sees finished BSON values.
+/// The driver only ever sees finished BSON values, never a dictionary of arbitrary objects.
 /// </summary>
 public static class LogEntryBsonConverter
 {
 	/// <summary>
-	/// Builds the MongoDB document for <paramref name="entry"/>. <c>_id</c> is assigned here so that a
-	/// retried batch cannot insert the same entry twice. Fields that are <see langword="null"/> are omitted.
+	/// Builds the MongoDB document for <paramref name="entry"/> and assigns its <c>_id</c>.
+	/// Fields that are <see langword="null"/> are omitted.
 	/// </summary>
 	/// <param name="entry">The entry to convert.</param>
 	/// <param name="options">
@@ -61,7 +61,7 @@ public static class LogEntryBsonConverter
 	/// <summary>
 	/// Maps a property value to BSON: string/bool/int/long/double natively, <see cref="DateTime"/> as UTC,
 	/// <see cref="decimal"/> as Decimal128, <see cref="Guid"/> as standard (subtype 4) binary, enums by name,
-	/// <see langword="null"/> as BSON null, object snapshots (<see cref="JsonElement"/>) as subdocuments and arrays,
+	/// <see langword="null"/> as BSON null, object snapshots (<see cref="JsonSnapshot"/>) as subdocuments and arrays,
 	/// and anything else as its string representation.
 	/// </summary>
 	/// <param name="value">The value to map.</param>
@@ -78,7 +78,7 @@ public static class LogEntryBsonConverter
 		decimal m => new BsonDecimal128(m),
 		Guid g => new BsonBinaryData(g, GuidRepresentation.Standard),
 		Enum e => new BsonString(e.ToString()),
-		JsonElement element => ToBsonValue(element),
+		JsonSnapshot snapshot => ToBsonValue(snapshot.ToElement()),
 		_ => new BsonString(value.ToString() ?? string.Empty)
 	};
 
@@ -138,31 +138,56 @@ public static class LogEntryBsonConverter
 }
 
 /// <summary>
-/// Writes batches of log documents to a MongoDB collection using an unordered <c>InsertManyAsync</c>.
+/// Writes batches of log entries to a MongoDB collection using an unordered <c>InsertManyAsync</c>.
+/// The entries are converted to BSON here, on the background writer thread, not in the logging call.
 /// </summary>
 /// <param name="collection">The MongoDB collection that receives log entries.</param>
-public sealed class MongoDbLogWriter(IMongoCollection<BsonDocument> collection) : IBatchedLogWriter<BsonDocument>
+/// <param name="options">Controls which message fields are stored; <see langword="null"/> uses the defaults.</param>
+public sealed class MongoDbLogWriter(IMongoCollection<BsonDocument> collection, MongoDbLoggerOptions? options = null) : IBatchedLogWriter<LogEntry>
 {
 	private static readonly InsertManyOptions InsertOptions = new() { IsOrdered = false };
 
+	// The documents of the batch in flight. A retried batch reuses them, so every entry keeps its _id.
+	private readonly List<BsonDocument> documents = [];
+	private LogEntry? pendingFirst;
+	private LogEntry? pendingLast;
+
 	/// <summary>
-	/// Inserts all documents in the batch into the MongoDB collection. The insert is unordered, so one
+	/// Inserts all entries in the batch into the MongoDB collection. The insert is unordered, so one
 	/// rejected document does not stop the rest. Duplicate-key errors are ignored: they mean the document
 	/// was already stored by an earlier attempt of the same batch.
 	/// </summary>
-	/// <param name="entries">The log documents to insert.</param>
+	/// <param name="entries">The log entries to insert.</param>
 	/// <param name="ct">A token that can cancel the operation.</param>
-	public async Task WriteBatchAsync(List<BsonDocument> entries, CancellationToken ct)
+	public async Task WriteBatchAsync(List<LogEntry> entries, CancellationToken ct)
 	{
+		if (entries.Count == 0) return;
+
+		bool isRetry = documents.Count == entries.Count
+			&& ReferenceEquals(pendingFirst, entries[0])
+			&& ReferenceEquals(pendingLast, entries[^1]);
+
+		if (!isRetry)
+		{
+			documents.Clear();
+			foreach (var entry in entries)
+				documents.Add(LogEntryBsonConverter.ToDocument(entry, options));
+			pendingFirst = entries[0];
+			pendingLast = entries[^1];
+		}
+
 		try
 		{
-			await collection.InsertManyAsync(entries, InsertOptions, ct);
+			await collection.InsertManyAsync(documents, InsertOptions, ct);
 		}
 		catch (MongoBulkWriteException<BsonDocument> ex) when (
 			ex.WriteConcernError is null &&
 			ex.WriteErrors.All(e => e.Category == ServerErrorCategory.DuplicateKey))
 		{
 		}
+
+		documents.Clear();
+		pendingFirst = pendingLast = null;
 	}
 
 	/// <inheritdoc/>

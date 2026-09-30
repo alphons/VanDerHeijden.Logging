@@ -55,10 +55,10 @@ public static class MongoDbLoggingBuilderExtensions
 		}
 
 		var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
-		var logWriter = new MongoDbLogWriter(collection);
-		var batchedLogger = new BatchedLogger<BsonDocument>(logWriter, batchSize: 100, maxIdleMs: 3000, fullMode: BoundedChannelFullMode.DropOldest);
+		var logWriter = new MongoDbLogWriter(collection, options);
+		var batchedLogger = new BatchedLogger<LogEntry>(logWriter, batchSize: 100, maxIdleMs: 3000, fullMode: BoundedChannelFullMode.DropOldest);
 
-		// The factory runs inside ILogger.Log, so the BSON document is a snapshot taken at log time.
-		return new BatchedLoggerProvider<BsonDocument>(batchedLogger, entry => LogEntryBsonConverter.ToDocument(entry, options), httpContextAccessor);
+		// Property values are snapshotted in ILogger.Log; the BSON document is built later by the writer.
+		return new BatchedLoggerProvider<LogEntry>(batchedLogger, entryFactory: entry => entry, httpContextAccessor);
 	}
 }

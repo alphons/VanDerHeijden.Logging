@@ -34,14 +34,14 @@ static bool VerifyJsonLines()
 	string directory = Path.Combine(Path.GetTempPath(), $"jsonl-verify-{Guid.NewGuid():N}");
 	var orderId = Guid.NewGuid();
 	var when = new DateTime(2026, 3, 4, 5, 6, 7, DateTimeKind.Utc);
-	var mutable = new List<int> { 1 };
+	var basket = new Basket { Name = "fruit", Items = [1] };
 
 	using (var factory = LoggerFactory.Create(b => b.AddFileLogger(directory, LogFormat.Json)))
 	{
 		var logger = factory.CreateLogger("Verify.Json");
 		logger.LogInformation(new EventId(7, "Order"), "Order {OrderId} count {Count} amount {Amount} at {When} list {List} \"quoted\"",
-			orderId, 42, 12.34m, when, new Basket("fruit", mutable));
-		mutable.Add(2); // must not show up: values are snapshotted at log time
+			orderId, 42, 12.34m, when, basket);
+		basket.Name = "changed"; // must not show up: top-level members are frozen by the shallow clone taken at log time
 		logger.LogError(new InvalidOperationException("boom"), "Failed");
 	} // disposing the factory flushes and closes the file
 
@@ -73,8 +73,9 @@ static bool VerifyJsonLines()
 			Check("decimal property is a number", p.GetProperty("Amount").GetDecimal() == 12.34m);
 			Check("Guid property", p.GetProperty("OrderId").GetGuid() == orderId);
 			Check("DateTime property is UTC", p.GetProperty("When").GetDateTime().ToUniversalTime() == when);
-			Check("custom object is a nested JSON object", p.GetProperty("List").ValueKind == JsonValueKind.Object && p.GetProperty("List").GetProperty("Name").GetString() == "fruit");
-			Check("custom object snapshotted at log time", p.GetProperty("List").GetProperty("Items").GetArrayLength() == 1 && p.GetProperty("List").GetProperty("Items")[0].GetInt32() == 1);
+			Check("custom object is a nested JSON object", p.GetProperty("List").ValueKind == JsonValueKind.Object);
+			Check("top-level member frozen at log time", p.GetProperty("List").GetProperty("Name").GetString() == "fruit");
+			Check("nested collection is a JSON array", p.GetProperty("List").GetProperty("Items").GetArrayLength() == 1 && p.GetProperty("List").GetProperty("Items")[0].GetInt32() == 1);
 			Check("no exception field without exception", !e.TryGetProperty("exception", out JsonElement none));
 
 			var error = second.RootElement;
@@ -94,4 +95,8 @@ static bool VerifyJsonLines()
 	return passed;
 }
 
-sealed record Basket(string Name, List<int> Items);
+sealed class Basket
+{
+	public string Name { get; set; } = "";
+	public List<int> Items { get; set; } = [];
+}

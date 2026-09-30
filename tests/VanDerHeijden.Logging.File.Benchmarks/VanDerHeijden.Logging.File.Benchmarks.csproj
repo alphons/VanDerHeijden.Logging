@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\VanDerHeijden.Logging.File\VanDerHeijden.Logging.File.csproj" />
+    <ProjectReference Include="..\..\src\VanDerHeijden.Logging.MongoDb\VanDerHeijden.Logging.MongoDb.csproj" />
   </ItemGroup>
 
 </Project>

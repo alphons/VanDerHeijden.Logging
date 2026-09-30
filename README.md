@@ -163,11 +163,21 @@ Property values are snapshotted on the logging thread, because batches are writt
 by then: strings, booleans, `int`, `long`, `double`, `decimal`, `Guid` and `DateTime` (converted to UTC) keep their
 type, smaller numeric types are widened, enums are stored by name, and `TimeSpan` and other formattable values are stored as strings.
 
-Objects, records and collections are serialized to JSON at log time, so `logger.LogInformation("Order for {Customer}", customer)`
-stores `"Customer": { "Name": "Alice", "Number": 7, "Tags": ["vip"] }` as a nested object (a subdocument in MongoDB)
-instead of the `ToString()` text. Enums inside objects are written by name. A value falls back to `ToString()` when it
-cannot be serialized, has no public properties, or its JSON exceeds 32 KB. The formatted `Message` is unaffected: it
-still contains the `ToString()` text, as produced by `Microsoft.Extensions.Logging`.
+Objects, records and collections are stored as nested JSON, so `logger.LogInformation("Order for {Customer}", customer)`
+stores `"Customer": { "Name": "Alice", "Number": 7, "Tags": ["vip"] }` (a subdocument in MongoDB) instead of the
+`ToString()` text. To keep the logging call cheap, only a **shallow clone** of the object is taken at log time; the
+JSON is produced later, on the background writer thread:
+
+- Top-level members are frozen at log time: changing `customer.Name` afterwards does not affect the log.
+- Nested objects and collections are shared with the original: changing `customer.Address.City` or adding to
+  `customer.Tags` before the batch is written can show up in the log. Log immutable data (records) or the specific
+  values you need when that matters.
+- Objects that must not be cloned — anything `IDisposable` or with a finalizer, types, delegates, exceptions, tasks —
+  are stored as their `ToString()` text, as are values that cannot be serialized, have no public properties or
+  exceed 32 KB of JSON.
+
+Enums inside objects are written by name. The formatted `Message` is unaffected: it still contains the `ToString()`
+text, as produced by `Microsoft.Extensions.Logging`.
 
 JSON output (file, Redis, the SQL `Properties` column) is produced by the shared `LogEntryJsonWriter`, so the field
 names are the same everywhere: `timestamp`, `level`, `eventId`, `eventName`, `category`, `message`, `messageTemplate`,
@@ -247,22 +257,50 @@ your own type (e.g. a pre-formatted `string`, as the text file logger does) and 
 ## Performance
 
 Benchmarked with [BenchmarkDotNet](https://benchmarkdotnet.org/) 0.15.8 on .NET 10.0.12 (X64 RyuJIT), Windows 10.
-Each figure is the mean time per `WriteBatchAsync` call of the text file writer, averaged over 2 000 consecutive calls.
+All times are in milliseconds per 1 000 operations.
 
-| BatchSize | MessageLength | Mean/flush | Allocated |
-|----------:|:-------------:|-----------:|----------:|
-| 1         | 80 B          |    47.9 µs |     476 B |
-| 10        | 256 B         |    60.1 µs |     476 B |
-| 100       | 1 024 B       |   212.9 µs |     757 B |
-| 500       | 1 024 B       | 1 175.6 µs |   2 437 B |
+### Cost of logging, on the calling thread
 
-Allocation is flat (~476 B) for batches up to 100 messages of up to 256 B — zero GC pressure in typical use. The `Write()` call itself allocates nothing beyond the log entry and only blocks when the channel is full in `Wait` mode.
+What 1 000 `logger.LogInformation(...)` calls cost the thread that logs. Writing happens later, in the background.
 
-End-to-end, enqueueing 10 000 messages takes about 0.55 ms (well under 1 µs per message). Past the channel capacity of
-10 000 entries `Wait` mode applies backpressure instead of dropping: 100 000 messages take about 136 ms and
-allocate 590 KB in total.
+| 1 000 log calls with          | Time    | Allocated per call |
+|-------------------------------|--------:|-------------------:|
+| a plain message               | 0.45 ms |              257 B |
+| 3 primitive arguments         | 1.9 ms  |            1 117 B |
+| a Guid and an object (record) | 3.9 ms  |            3 314 B |
 
-> Hardware: Intel Core i7-3520M 2.90 GHz · Full results in [`VanDerHeijden.Logging.File`](src/VanDerHeijden.Logging.File/README.md#performance).
+An object argument is only shallow-cloned by the caller; serializing it to JSON or BSON is done by the writer thread.
+When the channel is full the calls get slower (garbage collection of the queued entries): about 16 ms per 1 000
+calls was measured with a deliberately slow writer.
+
+### Cost of writing, on the background thread
+
+| 1 000 entries with an object                     | Time    |
+|--------------------------------------------------|--------:|
+| written as JSON lines to the buffer              | 1.0 ms  |
+| converted to MongoDB documents                   | 6.8 ms  |
+| 100 000 entries logged and written to `.jsonl`   | 13.7 ms |
+| inserted into MongoDB (batches of 100, 4 indexes)| 267 ms  |
+
+The first two rows exclude the one-time JSON serialization of the object itself. The MongoDB insert rate (about
+3 700 documents per second on this machine, local server) is what limits sustained logging: the MongoDB logger uses
+`DropOldest`, so a burst that outruns the writer by more than the 10 000-entry channel loses its oldest entries.
+
+### Text file writer
+
+Time for 1 000 `WriteBatchAsync` calls (one flush to disk each).
+
+| BatchSize | MessageLength | 1 000 flushes | Allocated per flush |
+|----------:|:-------------:|--------------:|--------------------:|
+| 1         | 80 B          |       47.9 ms |               476 B |
+| 10        | 256 B         |       60.1 ms |               476 B |
+| 100       | 1 024 B       |      212.9 ms |               757 B |
+| 500       | 1 024 B       |    1 175.6 ms |             2 437 B |
+
+Enqueueing 10 000 pre-formatted messages takes about 0.55 ms. Past the channel capacity of 10 000 entries `Wait`
+mode applies backpressure instead of dropping: 100 000 messages take about 136 ms and allocate 590 KB in total.
+
+> Hardware: Intel Core i7-3520M 2.90 GHz (2 cores / 4 threads) · Full file writer results in [`VanDerHeijden.Logging.File`](src/VanDerHeijden.Logging.File/README.md#performance).
 
 ## License
 

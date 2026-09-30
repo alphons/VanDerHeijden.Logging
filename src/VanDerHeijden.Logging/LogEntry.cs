@@ -35,8 +35,9 @@ public class LogEntry
 	/// Gets or sets the structured properties extracted from the log state, or <see langword="null"/> when there are none.
 	/// Values are snapshotted at log time and limited to <see cref="string"/>, <see cref="bool"/>, <see cref="int"/>,
 	/// <see cref="long"/>, <see cref="double"/>, <see cref="decimal"/>, <see cref="Guid"/> and UTC <see cref="DateTime"/>;
-	/// enums are stored by name. Objects and collections are stored as a <see cref="System.Text.Json.JsonElement"/>
-	/// snapshot (JSON object or array); values that cannot be serialized are stored as their string representation.
+	/// enums are stored by name. Objects and collections are stored as a <see cref="JsonSnapshot"/>: a shallow clone
+	/// taken at log time that is serialized to JSON on the writer thread (top-level members are frozen, nested objects are shared);
+	/// values that cannot be cloned or serialized are stored as their string representation.
 	/// </summary>
 	public Dictionary<string, object?>? Properties { get; set; }
 

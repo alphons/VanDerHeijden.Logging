@@ -87,8 +87,10 @@ In configuration the keys are `MongoDb:StoreMessage` and `MongoDb:StoreMessageTe
 
 ### Properties
 
-The whole document, including `Properties`, is built inside `ILogger.Log` — a snapshot at log time. The driver
-never receives a `Dictionary<string, object?>`, so an unusual argument type cannot make an insert fail.
+Property values are captured in `ILogger.Log`; the BSON document is built afterwards by the background writer, so the
+logging call stays cheap. The driver never receives a `Dictionary<string, object?>`, so an unusual argument type cannot
+make an insert fail. Objects are captured as a shallow clone: top-level members are frozen at log time, nested objects
+and collections are shared with the original until the batch is written.
 
 | .NET value | BSON |
 |---|---|
@@ -126,7 +128,7 @@ Changing `RetentionDays` replaces the `Timestamp` index with the new TTL.
 ## Reliability
 
 - Inserts are unordered (`IsOrdered = false`): one rejected document does not stop the rest of the batch.
-- `_id` is assigned when the entry is logged, so a retried batch cannot store an entry twice.
+- A retried batch reuses the documents it already built, so every entry keeps its `_id` and cannot be stored twice.
 - The internal channel uses `DropOldest`: if MongoDB is unreachable, logging never blocks the application and
   the oldest buffered entries are discarded.
 
