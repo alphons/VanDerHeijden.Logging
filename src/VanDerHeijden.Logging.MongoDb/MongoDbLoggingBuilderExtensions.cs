@@ -59,6 +59,6 @@ public static class MongoDbLoggingBuilderExtensions
 		var batchedLogger = new BatchedLogger<BsonDocument>(logWriter, batchSize: 100, maxIdleMs: 3000, fullMode: BoundedChannelFullMode.DropOldest);
 
 		// The factory runs inside ILogger.Log, so the BSON document is a snapshot taken at log time.
-		return new BatchedLoggerProvider<BsonDocument>(batchedLogger, LogEntryBsonConverter.ToDocument, httpContextAccessor);
+		return new BatchedLoggerProvider<BsonDocument>(batchedLogger, entry => LogEntryBsonConverter.ToDocument(entry, options), httpContextAccessor);
 	}
 }

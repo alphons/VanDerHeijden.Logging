@@ -256,7 +256,7 @@ internal sealed class BatchedCategoryLogger<T>(
 		sbyte or byte or short or ushort or uint => Convert.ToInt64(value),
 		Enum e => e.ToString(),
 		IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
-		_ => value.ToString()
+		_ => LogValueSnapshot.Capture(value)
 	};
 
 	private void ApplyHttpContext(LogEntry entry)

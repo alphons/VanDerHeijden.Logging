@@ -161,7 +161,13 @@ Every log call is captured as one `VanDerHeijden.Logging.LogEntry`, the source f
 
 Property values are snapshotted on the logging thread, because batches are written later and objects may have changed
 by then: strings, booleans, `int`, `long`, `double`, `decimal`, `Guid` and `DateTime` (converted to UTC) keep their
-type, smaller numeric types are widened, enums are stored by name, and everything else is stored as its string representation.
+type, smaller numeric types are widened, enums are stored by name, and `TimeSpan` and other formattable values are stored as strings.
+
+Objects, records and collections are serialized to JSON at log time, so `logger.LogInformation("Order for {Customer}", customer)`
+stores `"Customer": { "Name": "Alice", "Number": 7, "Tags": ["vip"] }` as a nested object (a subdocument in MongoDB)
+instead of the `ToString()` text. Enums inside objects are written by name. A value falls back to `ToString()` when it
+cannot be serialized, has no public properties, or its JSON exceeds 32 KB. The formatted `Message` is unaffected: it
+still contains the `ToString()` text, as produced by `Microsoft.Extensions.Logging`.
 
 JSON output (file, Redis, the SQL `Properties` column) is produced by the shared `LogEntryJsonWriter`, so the field
 names are the same everywhere: `timestamp`, `level`, `eventId`, `eventName`, `category`, `message`, `messageTemplate`,

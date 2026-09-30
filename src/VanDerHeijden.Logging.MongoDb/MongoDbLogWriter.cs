@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Text.Json;
 
 namespace VanDerHeijden.Logging.MongoDb;
 
@@ -14,8 +15,11 @@ public static class LogEntryBsonConverter
 	/// retried batch cannot insert the same entry twice. Fields that are <see langword="null"/> are omitted.
 	/// </summary>
 	/// <param name="entry">The entry to convert.</param>
+	/// <param name="options">
+	/// Controls whether <c>Message</c> and <c>MessageTemplate</c> are stored; <see langword="null"/> stores both.
+	/// </param>
 	/// <returns>The document to insert.</returns>
-	public static BsonDocument ToDocument(LogEntry entry)
+	public static BsonDocument ToDocument(LogEntry entry, MongoDbLoggerOptions? options = null)
 	{
 		var doc = new BsonDocument
 		{
@@ -23,12 +27,17 @@ public static class LogEntryBsonConverter
 			{ nameof(LogEntry.Timestamp), new BsonDateTime(entry.Timestamp.ToUniversalTime()) },
 			{ nameof(LogEntry.Level),     entry.Level.ToString() },
 			{ nameof(LogEntry.EventId),   entry.EventId },
-			{ nameof(LogEntry.Category),  entry.Category },
-			{ nameof(LogEntry.Message),   entry.Message }
+			{ nameof(LogEntry.Category),  entry.Category }
 		};
 
+		// The message is kept whenever the template is not stored (switched off or absent), so the text is never lost.
+		bool storeTemplate = options?.StoreMessageTemplate != false && entry.MessageTemplate is not null;
+		if (options?.StoreMessage != false || !storeTemplate)
+			doc.Add(nameof(LogEntry.Message), entry.Message);
+
 		AddIfSet(doc, nameof(LogEntry.EventName), entry.EventName);
-		AddIfSet(doc, nameof(LogEntry.MessageTemplate), entry.MessageTemplate);
+		if (storeTemplate)
+			doc.Add(nameof(LogEntry.MessageTemplate), entry.MessageTemplate);
 
 		if (entry.Properties is { Count: > 0 } properties)
 		{
@@ -52,7 +61,8 @@ public static class LogEntryBsonConverter
 	/// <summary>
 	/// Maps a property value to BSON: string/bool/int/long/double natively, <see cref="DateTime"/> as UTC,
 	/// <see cref="decimal"/> as Decimal128, <see cref="Guid"/> as standard (subtype 4) binary, enums by name,
-	/// <see langword="null"/> as BSON null and anything else as its string representation.
+	/// <see langword="null"/> as BSON null, object snapshots (<see cref="JsonElement"/>) as subdocuments and arrays,
+	/// and anything else as its string representation.
 	/// </summary>
 	/// <param name="value">The value to map.</param>
 	/// <returns>The BSON value.</returns>
@@ -68,8 +78,39 @@ public static class LogEntryBsonConverter
 		decimal m => new BsonDecimal128(m),
 		Guid g => new BsonBinaryData(g, GuidRepresentation.Standard),
 		Enum e => new BsonString(e.ToString()),
+		JsonElement element => ToBsonValue(element),
 		_ => new BsonString(value.ToString() ?? string.Empty)
 	};
+
+	// Object snapshots become subdocuments and arrays, so nested values can be queried (Properties.Customer.Name).
+	private static BsonValue ToBsonValue(JsonElement element)
+	{
+		switch (element.ValueKind)
+		{
+			case JsonValueKind.Object:
+				var doc = new BsonDocument();
+				foreach (var property in element.EnumerateObject())
+					doc[SanitizeKey(property.Name)] = ToBsonValue(property.Value);
+				return doc;
+			case JsonValueKind.Array:
+				var array = new BsonArray(element.GetArrayLength());
+				foreach (var item in element.EnumerateArray())
+					array.Add(ToBsonValue(item));
+				return array;
+			case JsonValueKind.String:
+				return new BsonString(element.GetString() ?? string.Empty);
+			case JsonValueKind.Number:
+				if (element.TryGetInt32(out int i)) return new BsonInt32(i);
+				if (element.TryGetInt64(out long l)) return new BsonInt64(l);
+				return new BsonDouble(element.GetDouble());
+			case JsonValueKind.True:
+				return BsonBoolean.True;
+			case JsonValueKind.False:
+				return BsonBoolean.False;
+			default:
+				return BsonNull.Value;
+		}
+	}
 
 	/// <summary>
 	/// Makes a property name safe to use as a MongoDB field name: every <c>'.'</c> and a leading <c>'$'</c>

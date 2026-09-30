@@ -44,6 +44,23 @@ builder.Services.AddMongoDbLogging(builder.Configuration);
 |---|---|---|
 | `CreateIndexes` | `true` | Create the indexes below when the logger starts |
 | `RetentionDays` | `null` | When set, entries are removed after this many days (TTL index on `Timestamp`) |
+| `StoreMessage` | `true` | Store the formatted text as `Message` (`User 42 logged in`) |
+| `StoreMessageTemplate` | `true` | Store the template as `MessageTemplate` (`User {UserId} logged in`) |
+
+With both enabled a document holds the text twice: once formatted, and once as template plus `Properties`.
+Choose what you need:
+
+| `StoreMessage` | `StoreMessageTemplate` | Stored | Use when |
+|---|---|---|---|
+| `true` | `true` | `Message`, `MessageTemplate`, `Properties` | Default: readable text and grouping by template |
+| `true` | `false` | `Message`, `Properties` | You read and search the text and do not group by template |
+| `false` | `true` | `MessageTemplate`, `Properties` | Smallest documents; the viewer rebuilds the text from template and properties |
+| `false` | `false` | `Message`, `Properties` | Same as `true` / `false`: the text is never dropped entirely |
+
+`Properties` is always stored, and at least one of `Message` and `MessageTemplate` is always stored: an entry
+whose template is not stored (switched off, or the log call had none) keeps its `Message` even when
+`StoreMessage` is `false`.
+In configuration the keys are `MongoDb:StoreMessage` and `MongoDb:StoreMessageTemplate`.
 
 ## Document
 
@@ -82,11 +99,16 @@ never receives a `Dictionary<string, object?>`, so an unusual argument type cann
 | enum | String (name) |
 | `null` | Null |
 | smaller integers, `float` | Int64 / Double |
-| anything else | String (`ToString()`) |
+| object, record | Subdocument (nested values mapped as JSON: string, Int32/Int64, Double, Boolean, Null) |
+| collection | Array |
+| not serializable, or over 32 KB of JSON | String (`ToString()`) |
 
 Keys are sanitized: every `.` and a leading `$` become `_` (`{user.name}` is stored as `user_name`).
 
-Query properties directly, e.g. `{ "Properties.Count": { $gt: 10 } }`.
+Query properties directly, e.g. `{ "Properties.Count": { $gt: 10 } }` or `{ "Properties.Customer.Name": "Alice" }`.
+
+Inside an object the JSON types apply: a nested `decimal` becomes a Double and a nested `Guid` or `DateTime` a string.
+Pass such a value as its own template argument when you need the native BSON type. Nested keys are sanitized too.
 
 ## Indexes
 

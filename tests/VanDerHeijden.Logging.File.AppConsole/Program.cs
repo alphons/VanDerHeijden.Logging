@@ -40,7 +40,7 @@ static bool VerifyJsonLines()
 	{
 		var logger = factory.CreateLogger("Verify.Json");
 		logger.LogInformation(new EventId(7, "Order"), "Order {OrderId} count {Count} amount {Amount} at {When} list {List} \"quoted\"",
-			orderId, 42, 12.34m, when, new Snapshot(mutable));
+			orderId, 42, 12.34m, when, new Basket("fruit", mutable));
 		mutable.Add(2); // must not show up: values are snapshotted at log time
 		logger.LogError(new InvalidOperationException("boom"), "Failed");
 	} // disposing the factory flushes and closes the file
@@ -73,7 +73,8 @@ static bool VerifyJsonLines()
 			Check("decimal property is a number", p.GetProperty("Amount").GetDecimal() == 12.34m);
 			Check("Guid property", p.GetProperty("OrderId").GetGuid() == orderId);
 			Check("DateTime property is UTC", p.GetProperty("When").GetDateTime().ToUniversalTime() == when);
-			Check("custom object snapshotted at log time", p.GetProperty("List").GetString() == "1");
+			Check("custom object is a nested JSON object", p.GetProperty("List").ValueKind == JsonValueKind.Object && p.GetProperty("List").GetProperty("Name").GetString() == "fruit");
+			Check("custom object snapshotted at log time", p.GetProperty("List").GetProperty("Items").GetArrayLength() == 1 && p.GetProperty("List").GetProperty("Items")[0].GetInt32() == 1);
 			Check("no exception field without exception", !e.TryGetProperty("exception", out JsonElement none));
 
 			var error = second.RootElement;
@@ -93,7 +94,4 @@ static bool VerifyJsonLines()
 	return passed;
 }
 
-sealed class Snapshot(List<int> values)
-{
-	public override string ToString() => string.Join(",", values);
-}
+sealed record Basket(string Name, List<int> Items);

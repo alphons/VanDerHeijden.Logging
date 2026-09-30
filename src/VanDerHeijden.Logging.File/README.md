@@ -54,8 +54,8 @@ One JSON object per line, written with `Utf8JsonWriter`. For `logger.LogInformat
 ```
 
 `eventName`, `exception`, `referer`, `userAgent`, `sessionId` and `sessionGuid` are included when set; `null`
-fields are omitted. Property values are written as JSON strings, numbers or booleans; other types are written
-as their string representation. The JSON is produced by the shared `LogEntryJsonWriter` from the core package.
+fields are omitted. Property values are written as JSON strings, numbers or booleans; objects and collections are written as
+nested JSON objects and arrays (falling back to `ToString()` when they cannot be serialized). The JSON is produced by the shared `LogEntryJsonWriter` from the core package.
 
 Register `IHttpContextAccessor` in `Program.cs` to enable HTTP enrichment:
 

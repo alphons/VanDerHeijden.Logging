@@ -7,7 +7,9 @@ namespace VanDerHeijden.Logging.Web.Controllers;
 
 public enum OrderStatus { Pending, Shipped }
 
-public sealed record Customer(string Name, int Number);
+public sealed record Address(string City);
+
+public sealed record Customer(string Name, int Number, string[] Tags, Address Address, OrderStatus Status);
 
 /// <summary>
 /// Logs one structured message and verifies the document that ends up in MongoDB.
@@ -20,11 +22,11 @@ public class LogVerificationController(ILogger<LogVerificationController> logger
 		var testId = Guid.NewGuid();
 		var orderId = Guid.NewGuid();
 		var when = new DateTime(2026, 3, 4, 5, 6, 7, DateTimeKind.Local);
-		var customer = new Customer("Alice", 7);
+		var customer = new Customer("Alice", 7, ["vip", "nl"], new Address("Zwolle"), OrderStatus.Pending);
 
 		logger.LogInformation(new EventId(1001, "OrderPlaced"),
-			"Order {OrderId} count {Count} amount {Amount} at {When} for {Customer} status {Status} by {user.name} ({$ref}) test {TestId}",
-			orderId, 42, 12.34m, when, customer, OrderStatus.Shipped, "bob", "x", testId);
+			"Order {OrderId} count {Count} amount {Amount} at {When} for {Customer} status {Status} by {user.name} ({$ref}) type {Type} test {TestId}",
+			orderId, 42, 12.34m, when, customer, OrderStatus.Shipped, "bob", "x", typeof(Customer), testId);
 
 		// The batch is flushed after at most 3 seconds of inactivity.
 		var filter = Builders<BsonDocument>.Filter.Eq("Properties.TestId", new BsonBinaryData(testId, GuidRepresentation.Standard));
@@ -57,7 +59,9 @@ public class LogVerificationController(ILogger<LogVerificationController> logger
 			Check("decimal -> Decimal128", P("Amount").IsDecimal128 && P("Amount").AsDecimal == 12.34m);
 			Check("Guid -> binary subtype 4", P("OrderId") is BsonBinaryData { SubType: BsonBinarySubType.UuidStandard } bin && bin.ToGuid() == orderId);
 			Check("DateTime -> UTC date", P("When").IsBsonDateTime && P("When").ToUniversalTime() == when.ToUniversalTime());
-			Check("custom object -> ToString()", P("Customer") == customer.ToString());
+			Check("custom object -> subdocument", P("Customer") is BsonDocument c && c["Name"] == "Alice" && c["Number"].IsInt32 && c["Number"] == 7
+				&& c["Tags"] is BsonArray tags && tags.Count == 2 && tags[0] == "vip" && c["Address"]["City"] == "Zwolle" && c["Status"] == "Pending");
+			Check("unserializable object -> ToString()", P("Type") == typeof(Customer).ToString());
 			Check("enum -> string", P("Status") == "Shipped");
 			Check("'.' in key sanitized", P("user_name") == "bob" && !props.Contains("user.name"));
 			Check("leading '$' in key sanitized", P("_ref") == "x");

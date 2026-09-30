@@ -22,7 +22,8 @@ public static class MongoDbLoggingExtensions
 	/// <summary>
 	/// Registers the log collection using the <see cref="IMongoDatabase"/> from the DI container.
 	/// Reads <c>MongoDb:Collections:Logs</c> (collection name, default <c>"Logs"</c>) and
-	/// <c>MongoDb:RetentionDays</c> (optional TTL in days) from <paramref name="configuration"/>.
+	/// <c>MongoDb:RetentionDays</c> (optional TTL in days), <c>MongoDb:StoreMessage</c> and
+	/// <c>MongoDb:StoreMessageTemplate</c> (both default <c>true</c>) from <paramref name="configuration"/>.
 	/// </summary>
 	/// <param name="services">The service collection.</param>
 	/// <param name="configuration">The application configuration.</param>
@@ -35,7 +36,12 @@ public static class MongoDbLoggingExtensions
 		{
 			IMongoDatabase database = sp.GetRequiredService<IMongoDatabase>();
 			string collectioname = configuration["MongoDb:Collections:Logs"] ?? "Logs";
-			var options = new MongoDbLoggerOptions { RetentionDays = configuration.GetValue<int?>("MongoDb:RetentionDays") };
+			var options = new MongoDbLoggerOptions
+			{
+				RetentionDays = configuration.GetValue<int?>("MongoDb:RetentionDays"),
+				StoreMessage = configuration.GetValue("MongoDb:StoreMessage", true),
+				StoreMessageTemplate = configuration.GetValue("MongoDb:StoreMessageTemplate", true)
+			};
 			return new MongoDbLogTarget(database.GetCollection<BsonDocument>(collectioname), options);
 		});
 

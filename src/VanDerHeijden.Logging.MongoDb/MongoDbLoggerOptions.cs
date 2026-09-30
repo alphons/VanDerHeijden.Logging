@@ -18,6 +18,20 @@ public sealed class MongoDbLoggerOptions
 	/// <see langword="null"/> (the default) keeps entries forever.
 	/// </summary>
 	public int? RetentionDays { get; set; }
+
+	/// <summary>
+	/// Gets or sets whether the formatted message (e.g. <c>"User 42 logged in"</c>) is stored as <c>Message</c>.
+	/// Defaults to <see langword="true"/>. When <see langword="false"/>, the text can be rebuilt from
+	/// <c>MessageTemplate</c> and <c>Properties</c>. The message is still stored when the template is not
+	/// (no template on the entry, or <see cref="StoreMessageTemplate"/> is off), so the text is never lost.
+	/// </summary>
+	public bool StoreMessage { get; set; } = true;
+
+	/// <summary>
+	/// Gets or sets whether the message template (e.g. <c>"User {UserId} logged in"</c>) is stored as
+	/// <c>MessageTemplate</c>. Defaults to <see langword="true"/>.
+	/// </summary>
+	public bool StoreMessageTemplate { get; set; } = true;
 }
 
 /// <summary>
