@@ -1,13 +1,25 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Threading.Channels;
 
 namespace VanDerHeijden.Logging.MongoDb;
 
 /// <summary>
-/// Options for the MongoDB logger.
+/// Options for the MongoDB logger. The batching defaults are <c>BatchSize</c> 100, <c>MaxIdleMs</c> 3000 and
+/// <c>FullMode</c> <see cref="BoundedChannelFullMode.DropOldest"/> (logging never blocks the application).
 /// </summary>
-public sealed class MongoDbLoggerOptions
+public sealed class MongoDbLoggerOptions : BatchedLoggerOptions
 {
+	/// <summary>
+	/// Initializes the options with the MongoDB batching defaults.
+	/// </summary>
+	public MongoDbLoggerOptions()
+	{
+		BatchSize = 100;
+		MaxIdleMs = 3000;
+		FullMode = BoundedChannelFullMode.DropOldest;
+	}
+
 	/// <summary>
 	/// Gets or sets whether the indexes are created when the logger starts. Defaults to <see langword="true"/>.
 	/// </summary>

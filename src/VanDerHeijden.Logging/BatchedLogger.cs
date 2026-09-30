@@ -48,13 +48,23 @@ public sealed class BatchedLogger<T> : IDisposable
 		int batchSize = 200,
 		int maxIdleMs = 4000,
 		BoundedChannelFullMode fullMode = BoundedChannelFullMode.Wait)
+		: this(writer, new BatchedLoggerOptions { BatchSize = batchSize, MaxIdleMs = maxIdleMs, FullMode = fullMode })
+	{
+	}
+
+	/// <summary>
+	/// Initializes a new <see cref="BatchedLogger{T}"/> from <see cref="BatchedLoggerOptions"/>.
+	/// </summary>
+	/// <param name="writer">The writer that persists batches.</param>
+	/// <param name="options">Batch size, idle timeout, queue capacity and full mode.</param>
+	public BatchedLogger(IBatchedLogWriter<T> writer, BatchedLoggerOptions options)
 	{
 		this.writer = writer;
-		this.batchSize = batchSize;
-		this.maxIdleMs = maxIdleMs;
-		this.fullMode = fullMode;
+		batchSize = Math.Max(1, options.BatchSize);
+		maxIdleMs = Math.Max(1, options.MaxIdleMs);
+		fullMode = options.FullMode;
 
-		channel = Channel.CreateBounded<T>(new BoundedChannelOptions(10000)
+		channel = Channel.CreateBounded<T>(new BoundedChannelOptions(Math.Max(1, options.QueueCapacity))
 		{
 			SingleReader = true,
 			SingleWriter = false,
@@ -179,10 +189,16 @@ public sealed class BatchedLogger<T> : IDisposable
 /// Optional <see cref="IHttpContextAccessor"/> used to enrich log entries with request metadata.
 /// When <see langword="null"/>, HTTP properties are omitted.
 /// </param>
+/// <param name="formatMessage">
+/// When <see langword="false"/>, the formatted text is not produced for entries that have a message template:
+/// <see cref="LogEntry.Message"/> is left empty and the logging call skips the formatting cost. Entries without
+/// a template are always formatted. Use this only with a writer that stores the template and properties instead.
+/// </param>
 public sealed class BatchedLoggerProvider<T>(
 	BatchedLogger<T> batchedLogger,
 	Func<LogEntry, T> entryFactory,
-	IHttpContextAccessor? httpContextAccessor = null) : ILoggerProvider
+	IHttpContextAccessor? httpContextAccessor = null,
+	bool formatMessage = true) : ILoggerProvider
 {
 	/// <summary>
 	/// Creates an <see cref="ILogger"/> for the given category name.
@@ -190,7 +206,7 @@ public sealed class BatchedLoggerProvider<T>(
 	/// <param name="categoryName">The category name for messages produced by the logger.</param>
 	/// <returns>An <see cref="ILogger"/> instance.</returns>
 	public ILogger CreateLogger(string categoryName) =>
-		new BatchedCategoryLogger<T>(batchedLogger, categoryName, entryFactory, httpContextAccessor);
+		new BatchedCategoryLogger<T>(batchedLogger, categoryName, entryFactory, httpContextAccessor, formatMessage);
 
 	/// <summary>
 	/// Disposes the underlying <see cref="BatchedLogger{T}"/>, flushing any remaining entries.
@@ -202,7 +218,8 @@ internal sealed class BatchedCategoryLogger<T>(
 	BatchedLogger<T> batchedLogger,
 	string categoryName,
 	Func<LogEntry, T> entryFactory,
-	IHttpContextAccessor? httpContextAccessor) : ILogger
+	IHttpContextAccessor? httpContextAccessor,
+	bool formatMessage) : ILogger
 {
 	private const string OriginalFormatKey = "{OriginalFormat}";
 
@@ -220,12 +237,15 @@ internal sealed class BatchedCategoryLogger<T>(
 			EventId   = eventId.Id,
 			EventName = eventId.Name,
 			Category  = categoryName,
-			Message   = formatter(state, exception),
 			Exception = exception?.ToString()
 		};
 
 		if (state is IReadOnlyList<KeyValuePair<string, object?>> properties)
 			ExtractProperties(entry, properties);
+
+		// Formatting calls ToString() on every argument; skip it when the writer only stores the template.
+		if (formatMessage || entry.MessageTemplate is null)
+			entry.Message = formatter(state, exception);
 
 		ApplyHttpContext(entry);
 		batchedLogger.Write(entryFactory(entry));

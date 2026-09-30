@@ -210,17 +210,26 @@ Outside an HTTP context (background services, hosted workers) all HTTP fields ar
 
 ## Configuration
 
-`BatchedLogger<T>` accepts the following constructor parameters:
+Every logger takes the same batching settings, `BatchedLoggerOptions`, through an optional `configure` callback:
 
-| Parameter | Default | Description |
-|---|---|---|
-| `batchSize` | 200 | Maximum entries per flush |
-| `maxIdleMs` | 4000 | Maximum time (ms) between flushes when the batch is not full |
-| `fullMode` | `Wait` | What to do when the channel is full (`Wait` or `DropOldest`) |
+```csharp
+builder.Logging.AddFileLogger("Logs", LogFormat.Json, options => options.BatchSize = 500);
+builder.Logging.AddSqlLogger(connectionString, configure: options => options.QueueCapacity = 50_000);
+builder.Logging.AddRedisLogger(database, configure: options => options.MaxIdleMs = 1000);
+builder.Logging.AddMongoDbLogger(collection, options => { options.BatchSize = 500; options.RetentionDays = 30; });
+```
 
-The channel holds 10 000 entries. With `Wait` (File, SQL) a logging call **blocks** while the channel is full, so no
-entry is lost but a stalled target slows the application down. With `DropOldest` (MongoDB, Redis) logging never blocks
-and the oldest entries are discarded instead.
+| Setting | Description | File | SQL | Redis | MongoDB |
+|---|---|---|---|---|---|
+| `BatchSize` | Maximum entries per write; a full batch is written immediately | 200 | 200 | 200 | 100 |
+| `MaxIdleMs` | How long a non-full batch waits for more entries before it is written | 4000 | 4000 | 2000 | 3000 |
+| `QueueCapacity` | Entries the in-memory queue holds while the writer is busy | 10 000 | 10 000 | 10 000 | 10 000 |
+| `FullMode` | What happens when the queue is full | `Wait` | `Wait` | `DropOldest` | `DropOldest` |
+
+With `Wait` a logging call **blocks** while the queue is full, so no entry is lost but a stalled target slows the
+application down. With `DropOldest` logging never blocks and the oldest entries are discarded instead; raise
+`QueueCapacity` to absorb larger bursts. On shutdown the logger waits at most 10 seconds for the queue to drain,
+so a very large backlog can still be lost when the application stops.
 
 ## Implementing a custom writer
 

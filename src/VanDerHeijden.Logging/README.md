@@ -103,8 +103,11 @@ string propertiesJson = json.ToString();
 
 ## Backpressure
 
-`BatchedLogger<T>.Write` honours the `fullMode` passed to the constructor. With `BoundedChannelFullMode.Wait`
-(the default) the call blocks while the 10 000-entry channel is full, so nothing is dropped; with the drop modes
+`BatchedLogger<T>` is configured with `BatchedLoggerOptions`: `BatchSize` (default 200), `MaxIdleMs` (4000),
+`QueueCapacity` (10 000) and `FullMode` (`Wait`). All writer packages expose the same options.
+
+`BatchedLogger<T>.Write` honours `FullMode`. With `BoundedChannelFullMode.Wait`
+(the default) the call blocks while the queue is full, so nothing is dropped; with the drop modes
 it never blocks.
 
 ## Repository

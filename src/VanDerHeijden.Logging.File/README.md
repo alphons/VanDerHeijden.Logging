@@ -27,9 +27,19 @@ Timestamps and the date in the file name are UTC.
 |---|---|---|
 | `logDirectory` | `"Logs"` | Directory where log files are created |
 | `format` | `LogFormat.Text` | `Text` or `Json` (JSON Lines) |
+| `configure` | — | Callback to change the batching settings below |
 
-The file logger uses `batchSize` 200, `maxIdleMs` 4000 and `fullMode` `Wait`: when the internal
-channel (10 000 entries) is full, logging calls block until the writer catches up — nothing is dropped.
+Batching settings (`BatchedLoggerOptions`), changed with `AddFileLogger("Logs", LogFormat.Json, options => options.BatchSize = 500)`:
+
+| Setting | Default | Description |
+|---|---|---|
+| `BatchSize` | 200 | Maximum entries per write |
+| `MaxIdleMs` | 4000 | How long a non-full batch waits before it is written |
+| `QueueCapacity` | 10 000 | Entries the in-memory queue holds while the writer is busy |
+| `FullMode` | `Wait` | What happens when the queue is full |
+
+With `Wait`, when the queue is full,
+logging calls block until the writer catches up — nothing is dropped.
 
 ## Text format
 

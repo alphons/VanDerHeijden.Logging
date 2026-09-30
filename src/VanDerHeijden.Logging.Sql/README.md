@@ -18,6 +18,9 @@ builder.Logging.AddSqlLogger(
     tableName: "Logs");
 ```
 
+Batching is configurable: `AddSqlLogger(connectionString, configure: options => options.BatchSize = 500)`.
+Defaults: `BatchSize` 200, `MaxIdleMs` 4000, `QueueCapacity` 10 000, `FullMode` `Wait` (logging blocks when the queue is full; nothing is dropped).
+
 ## Required table schema
 
 ```sql

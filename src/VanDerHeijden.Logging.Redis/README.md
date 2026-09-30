@@ -57,7 +57,8 @@ Outside an HTTP context they are omitted.
 
 - The Redis list grows until consumed. Make sure a consumer drains it via `BLPOP`/`LPOP`.
 - Use `ttl` to automatically expire the key if no consumer is configured.
-- `fullMode: DropOldest` is the default — under extreme load, oldest log entries are dropped to protect application throughput.
+- `FullMode` defaults to `DropOldest` — under extreme load, oldest log entries are dropped to protect application throughput.
+- Batching is configurable: `AddRedisLogger(db, configure: options => options.BatchSize = 500)`. Defaults: `BatchSize` 200, `MaxIdleMs` 2000, `QueueCapacity` 10 000.
 
 ## Repository
 

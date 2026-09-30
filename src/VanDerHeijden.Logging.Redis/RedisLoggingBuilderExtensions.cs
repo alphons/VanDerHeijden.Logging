@@ -21,18 +21,22 @@ public static class RedisLoggingBuilderExtensions
 	/// Optional time-to-live applied to <paramref name="listKey"/> after each batch write.
 	/// When <see langword="null"/> (the default) the key never expires.
 	/// </param>
+	/// <param name="configure">Optional callback to change the batching settings (<see cref="BatchedLoggerOptions"/>).</param>
 	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
 	public static ILoggingBuilder AddRedisLogger(
 		this ILoggingBuilder builder,
 		IDatabase database,
 		string listKey = "logs",
-		TimeSpan? ttl = null)
+		TimeSpan? ttl = null,
+		Action<BatchedLoggerOptions>? configure = null)
 	{
 		builder.Services.AddSingleton<ILoggerProvider>(sp =>
 		{
 			var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
 			var logWriter = new RedisLogWriter(database, listKey, ttl);
-			var batchedLogger = new BatchedLogger<LogEntry>(logWriter, batchSize: 200, maxIdleMs: 2000, fullMode: BoundedChannelFullMode.DropOldest);
+			var options = new BatchedLoggerOptions { BatchSize = 200, MaxIdleMs = 2000, FullMode = BoundedChannelFullMode.DropOldest };
+			configure?.Invoke(options);
+			var batchedLogger = new BatchedLogger<LogEntry>(logWriter, options);
 			return new BatchedLoggerProvider<LogEntry>(batchedLogger, entryFactory: e => e, httpContextAccessor);
 		});
 		return builder;

@@ -22,7 +22,10 @@ public class LogEntry
 	/// <summary>Gets or sets the logger category name.</summary>
 	public string Category { get; set; } = string.Empty;
 
-	/// <summary>Gets or sets the formatted log message.</summary>
+	/// <summary>
+	/// Gets or sets the formatted log message. Empty when the provider was told not to format messages
+	/// and the entry has a <see cref="MessageTemplate"/>.
+	/// </summary>
 	public string Message { get; set; } = string.Empty;
 
 	/// <summary>

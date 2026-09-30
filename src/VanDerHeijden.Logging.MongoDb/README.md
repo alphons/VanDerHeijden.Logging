@@ -46,6 +46,10 @@ builder.Services.AddMongoDbLogging(builder.Configuration);
 | `RetentionDays` | `null` | When set, entries are removed after this many days (TTL index on `Timestamp`) |
 | `StoreMessage` | `true` | Store the formatted text as `Message` (`User 42 logged in`) |
 | `StoreMessageTemplate` | `true` | Store the template as `MessageTemplate` (`User {UserId} logged in`) |
+| `BatchSize` | 100 | Maximum documents per insert |
+| `MaxIdleMs` | 3000 | How long a non-full batch waits before it is written |
+| `QueueCapacity` | 10 000 | Entries the in-memory queue holds while the writer is busy |
+| `FullMode` | `DropOldest` | What happens when the queue is full |
 
 With both enabled a document holds the text twice: once formatted, and once as template plus `Properties`.
 Choose what you need:
@@ -60,7 +64,16 @@ Choose what you need:
 `Properties` is always stored, and at least one of `Message` and `MessageTemplate` is always stored: an entry
 whose template is not stored (switched off, or the log call had none) keeps its `Message` even when
 `StoreMessage` is `false`.
-In configuration the keys are `MongoDb:StoreMessage` and `MongoDb:StoreMessageTemplate`.
+With `StoreMessage = false` and the template stored, the text is not formatted at all: the logging call skips the
+`ToString()` of every argument, which makes it several times cheaper for calls that carry objects.
+
+In configuration the keys are `MongoDb:StoreMessage`, `MongoDb:StoreMessageTemplate`, `MongoDb:BatchSize`,
+`MongoDb:MaxIdleMs` and `MongoDb:QueueCapacity`.
+
+The insert rate of the server, not the batch size, limits throughput: on the test machine about 4 000 documents per
+second with the four indexes, for batch sizes from 100 to 2 000. If the application logs faster than that in bursts,
+raise `QueueCapacity` so the burst is buffered instead of dropped: a burst of 100 000 entries with
+`QueueCapacity = 200 000` was stored completely, about 30 seconds later.
 
 ## Document
 
@@ -129,7 +142,7 @@ Changing `RetentionDays` replaces the `Timestamp` index with the new TTL.
 
 - Inserts are unordered (`IsOrdered = false`): one rejected document does not stop the rest of the batch.
 - A retried batch reuses the documents it already built, so every entry keeps its `_id` and cannot be stored twice.
-- The internal channel uses `DropOldest`: if MongoDB is unreachable, logging never blocks the application and
+- The queue uses `DropOldest` by default: if MongoDB is unreachable or slower than the application logs, logging never blocks and
   the oldest buffered entries are discarded.
 
 ## HTTP fields

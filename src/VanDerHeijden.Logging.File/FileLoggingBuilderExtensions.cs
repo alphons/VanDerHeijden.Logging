@@ -33,21 +33,24 @@ public static class FileLoggingBuilderExtensions
 	/// Defaults to <c>"Logs"</c>.
 	/// </param>
 	/// <param name="format">The file format. Defaults to <see cref="LogFormat.Text"/>.</param>
+	/// <param name="configure">Optional callback to change the batching settings (<see cref="BatchedLoggerOptions"/>).</param>
 	/// <returns>The <paramref name="builder"/> so that additional calls can be chained.</returns>
-	public static ILoggingBuilder AddFileLogger(this ILoggingBuilder builder, string logDirectory = "Logs", LogFormat format = LogFormat.Text)
+	public static ILoggingBuilder AddFileLogger(this ILoggingBuilder builder, string logDirectory = "Logs", LogFormat format = LogFormat.Text, Action<BatchedLoggerOptions>? configure = null)
 	{
 		builder.Services.AddSingleton<ILoggerProvider>(sp =>
 		{
 			var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
+			var options = new BatchedLoggerOptions { BatchSize = 200, MaxIdleMs = 4000, FullMode = BoundedChannelFullMode.Wait };
+			configure?.Invoke(options);
 
 			if (format == LogFormat.Json)
 			{
-				var jsonLogger = new BatchedLogger<LogEntry>(new JsonFileLogWriter(logDirectory), fullMode: BoundedChannelFullMode.Wait);
+				var jsonLogger = new BatchedLogger<LogEntry>(new JsonFileLogWriter(logDirectory), options);
 				return new BatchedLoggerProvider<LogEntry>(jsonLogger, entryFactory: e => e, httpContextAccessor);
 			}
 
 			var logWriter = new FileLogWriter(logDirectory);
-			var batchedLogger = new BatchedLogger<string>(logWriter, fullMode: BoundedChannelFullMode.Wait);
+			var batchedLogger = new BatchedLogger<string>(logWriter, options);
 			return new BatchedLoggerProvider<string>(batchedLogger, FormatText, httpContextAccessor);
 		});
 		return builder;

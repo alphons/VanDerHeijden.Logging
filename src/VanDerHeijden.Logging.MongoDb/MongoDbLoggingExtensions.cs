@@ -23,7 +23,8 @@ public static class MongoDbLoggingExtensions
 	/// Registers the log collection using the <see cref="IMongoDatabase"/> from the DI container.
 	/// Reads <c>MongoDb:Collections:Logs</c> (collection name, default <c>"Logs"</c>) and
 	/// <c>MongoDb:RetentionDays</c> (optional TTL in days), <c>MongoDb:StoreMessage</c> and
-	/// <c>MongoDb:StoreMessageTemplate</c> (both default <c>true</c>) from <paramref name="configuration"/>.
+	/// <c>MongoDb:StoreMessageTemplate</c> (both default <c>true</c>), and the batching settings
+	/// <c>MongoDb:BatchSize</c>, <c>MongoDb:MaxIdleMs</c> and <c>MongoDb:QueueCapacity</c> from <paramref name="configuration"/>.
 	/// </summary>
 	/// <param name="services">The service collection.</param>
 	/// <param name="configuration">The application configuration.</param>
@@ -42,6 +43,9 @@ public static class MongoDbLoggingExtensions
 				StoreMessage = configuration.GetValue("MongoDb:StoreMessage", true),
 				StoreMessageTemplate = configuration.GetValue("MongoDb:StoreMessageTemplate", true)
 			};
+			options.BatchSize = configuration.GetValue("MongoDb:BatchSize", options.BatchSize);
+			options.MaxIdleMs = configuration.GetValue("MongoDb:MaxIdleMs", options.MaxIdleMs);
+			options.QueueCapacity = configuration.GetValue("MongoDb:QueueCapacity", options.QueueCapacity);
 			return new MongoDbLogTarget(database.GetCollection<BsonDocument>(collectioname), options);
 		});
 
