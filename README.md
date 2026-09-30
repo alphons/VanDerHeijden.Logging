@@ -240,19 +240,23 @@ your own type (e.g. a pre-formatted `string`, as the text file logger does) and 
 
 ## Performance
 
-Benchmarked with [BenchmarkDotNet](https://benchmarkdotnet.org/) on .NET 10.0.3 (X64 RyuJIT AVX-512), Windows 11.
-Each figure is the mean time per `WriteBatchAsync` call, averaged over 2 000 consecutive calls.
+Benchmarked with [BenchmarkDotNet](https://benchmarkdotnet.org/) 0.15.8 on .NET 10.0.12 (X64 RyuJIT), Windows 10.
+Each figure is the mean time per `WriteBatchAsync` call of the text file writer, averaged over 2 000 consecutive calls.
 
 | BatchSize | MessageLength | Mean/flush | Allocated |
 |----------:|:-------------:|-----------:|----------:|
-| 1         | 80 B          |    27.9 µs |     477 B |
-| 10        | 256 B         |    26.6 µs |     477 B |
-| 100       | 1 024 B       |   144.0 µs |     756 B |
-| 500       | 1 024 B       |   704.5 µs |   2 436 B |
+| 1         | 80 B          |    47.9 µs |     476 B |
+| 10        | 256 B         |    60.1 µs |     476 B |
+| 100       | 1 024 B       |   212.9 µs |     757 B |
+| 500       | 1 024 B       | 1 175.6 µs |   2 437 B |
 
-Allocation is flat (~477 B) for all batches up to 100 messages regardless of message length — zero GC pressure in typical use. The `Write()` call itself allocates nothing beyond the log entry and only blocks when the channel is full in `Wait` mode.
+Allocation is flat (~476 B) for batches up to 100 messages of up to 256 B — zero GC pressure in typical use. The `Write()` call itself allocates nothing beyond the log entry and only blocks when the channel is full in `Wait` mode.
 
-> Hardware: Intel Core i5-1035G1 1.00 GHz · Full results in [`VanDerHeijden.Logging.File`](src/VanDerHeijden.Logging.File/README.md#performance).
+End-to-end, enqueueing 10 000 messages takes about 0.55 ms (well under 1 µs per message). Past the channel capacity of
+10 000 entries `Wait` mode applies backpressure instead of dropping: 100 000 messages take about 136 ms and
+allocate 590 KB in total.
+
+> Hardware: Intel Core i7-3520M 2.90 GHz · Full results in [`VanDerHeijden.Logging.File`](src/VanDerHeijden.Logging.File/README.md#performance).
 
 ## License
 

@@ -65,29 +65,47 @@ builder.Services.AddHttpContextAccessor();
 
 ## Performance
 
-Benchmarked with [BenchmarkDotNet](https://benchmarkdotnet.org/) on .NET 10 (X64 RyuJIT AVX-512).
-Each measurement is the mean time per `WriteBatchAsync` call, averaged over 2 000 consecutive calls.
+Benchmarked with [BenchmarkDotNet](https://benchmarkdotnet.org/) 0.15.8 on .NET 10.0.12 (X64 RyuJIT).
 
-| BatchSize | MessageLength | Mean     | Allocated |
-|----------:|:-------------:|---------:|----------:|
-| 1         | 80 B          |  27.9 µs |     477 B |
-| 1         | 256 B         |  25.2 µs |     477 B |
-| 1         | 1 024 B       |  22.1 µs |     476 B |
-| 10        | 80 B          |  24.2 µs |     476 B |
-| 10        | 256 B         |  26.6 µs |     477 B |
-| 10        | 1 024 B       |  36.8 µs |     477 B |
-| 100       | 80 B          |  39.1 µs |     477 B |
-| 100       | 256 B         |  53.9 µs |     476 B |
-| 100       | 1 024 B       | 144.0 µs |     756 B |
-| 500       | 80 B          | 105.5 µs |     477 B |
-| 500       | 256 B         | 160.5 µs |     757 B |
-| 500       | 1 024 B       | 704.5 µs |   2 436 B |
+### FileLogWriter
+
+Each measurement is the mean time per `WriteBatchAsync` call (text format), averaged over 2 000 consecutive calls.
+
+| BatchSize | MessageLength | Mean       | Allocated |
+|----------:|:-------------:|-----------:|----------:|
+| 1         | 80 B          |    47.9 µs |     476 B |
+| 1         | 256 B         |    46.6 µs |     476 B |
+| 1         | 1 024 B       |    51.1 µs |     476 B |
+| 10        | 80 B          |    53.5 µs |     476 B |
+| 10        | 256 B         |    60.1 µs |     476 B |
+| 10        | 1 024 B       |    67.2 µs |     476 B |
+| 100       | 80 B          |    88.6 µs |     476 B |
+| 100       | 256 B         |   105.4 µs |     476 B |
+| 100       | 1 024 B       |   212.9 µs |     757 B |
+| 500       | 80 B          |   139.3 µs |     476 B |
+| 500       | 256 B         |   262.2 µs |     757 B |
+| 500       | 1 024 B       | 1 175.6 µs |   2 437 B |
 
 **Key characteristics:**
-- Allocation is flat (~477 B) for batches up to 100 messages of any length — zero GC pressure in typical use.
-- Per-call time is dominated by `FlushAsync` (~22 µs) at small batch sizes; write volume becomes the cost at larger batches.
+- Allocation is flat (~476 B) for batches up to 100 messages of up to 256 B — zero GC pressure in typical use.
+- Per-call time is dominated by `FlushAsync` (~47 µs) at small batch sizes; write volume becomes the cost at larger batches.
 
-> Hardware: Intel Core i5-1035G1 1.00 GHz, Windows 11, .NET 10.0.3
+### End-to-end (BatchedLogger + FileLogWriter)
+
+Time to enqueue N pre-formatted messages with `Write()` (`fullMode: Wait`, batch size 200).
+
+| Messages | Mean       | Allocated |
+|---------:|-----------:|----------:|
+| 1 000    |   229.5 µs |     16 KB |
+| 10 000   |   552.2 µs |    257 KB |
+| 100 000  | 135 943 µs |    590 KB |
+
+Up to the channel capacity (10 000 entries) enqueueing costs well under 1 µs per message. Beyond that, `Wait`
+mode applies backpressure: callers block until the writer catches up, so the 100 000 case measures the file writer
+(about 1.4 µs per message, 500 flushes to disk) rather than the enqueue. Nothing is dropped, and the consumer
+itself allocates nothing per entry.
+
+> Hardware: Intel Core i7-3520M 2.90 GHz (Ivy Bridge, 2 cores / 4 threads), Windows 10, .NET 10.0.12
 
 ## Repository
 

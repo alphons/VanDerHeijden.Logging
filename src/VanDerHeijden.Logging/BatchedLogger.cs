@@ -84,44 +84,51 @@ public sealed class BatchedLogger<T> : IDisposable
 	private async Task ConsumeAsync(CancellationToken ct)
 	{
 		var batch = new List<T>(batchSize);
-		Task<T>? readTask = null;
+		var reader = channel.Reader;
 
 		try
 		{
-			while (!ct.IsCancellationRequested)
+			while (true)
 			{
-				readTask ??= channel.Reader.ReadAsync(ct).AsTask();
+				// Drain everything that is already queued; this path allocates nothing per entry.
+				while (batch.Count < batchSize && reader.TryRead(out var entry))
+					batch.Add(entry);
 
-				using var delayCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-				var delayTask = Task.Delay(maxIdleMs, delayCts.Token);
-				var completed = await Task.WhenAny(readTask, delayTask);
-
-				if (completed == delayTask)
+				if (batch.Count >= batchSize)
 				{
-					if (batch.Count > 0)
-					{
-						await ExecuteWriteAsync(batch, ct);
-						batch.Clear();
-					}
+					await ExecuteWriteAsync(batch, ct);
+					batch.Clear();
 					continue;
 				}
 
-				delayCts.Cancel();
-				batch.Add(await readTask);
-				readTask = null;
+				if (batch.Count == 0)
+				{
+					// Nothing pending: wait until an entry arrives or the channel is completed.
+					if (!await reader.WaitToReadAsync(ct)) break;
+					continue;
+				}
 
-				if (batch.Count >= batchSize)
+				// Partial batch: wait at most maxIdleMs for more entries, then flush what we have.
+				using var idleCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+				idleCts.CancelAfter(maxIdleMs);
+				try
+				{
+					if (!await reader.WaitToReadAsync(idleCts.Token)) break;
+				}
+				catch (OperationCanceledException) when (!ct.IsCancellationRequested)
 				{
 					await ExecuteWriteAsync(batch, ct);
 					batch.Clear();
 				}
 			}
 		}
-		catch (Exception) when (batch.Count > 0)
+		catch { }
+
+		// Channel completed or shutdown requested: flush what is left.
+		if (batch.Count > 0)
 		{
 			try { await ExecuteWriteAsync(batch, CancellationToken.None); } catch { }
 		}
-		catch { }
 	}
 
 	private async Task ExecuteWriteAsync(List<T> batch, CancellationToken ct)
